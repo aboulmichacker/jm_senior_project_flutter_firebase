@@ -127,7 +127,6 @@ class _ScheduleState extends State<Schedule> {
               return SfCalendar(
                 view: CalendarView.week,
                 timeSlotViewSettings: const TimeSlotViewSettings(
-                  numberOfDaysInView: 3,
                   timeInterval: Duration(minutes: 25),
                   timeIntervalWidth: 200,
                 ),

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:jm_senior/Pages/exam_schedule.dart';
 import 'package:jm_senior/models/api_prediciton.dart';
 import 'package:jm_senior/models/exam_model.dart';
 import 'package:dio/dio.dart';
+import 'package:jm_senior/models/study_schedule_model.dart';
 import 'dart:math';
+
+import 'package:jm_senior/services/firestore_service.dart';
 class GenerateSchedule {
 
   Future<List<ApiPrediction>> _fetchPredictions(List<String> topics) async{
     //THIS MUST BE CONVERTED TO AN OBJECT LATER ON
+    //DATA TO BE FETCHED FROM SOLVED QUIZZES
     //FOR TESTING PURPOSES ONLY.
     List<Map<String, dynamic>> quizResultsData = topics.map((topic){
         final quizTimeTaken = Random().nextInt(26) + 5; // Random quiz time taken between 5 and 30 minutes
@@ -56,21 +61,69 @@ class GenerateSchedule {
         }
         throw Exception(errorMessage);
       }catch (e) { // Catch any other exceptions
-        print(e);
         throw Exception("An unexpected error occured: ${e.toString()}");
       }
   }
 
-  Future<void> generateSchedule(Exam exam, BuildContext context) async{
+  List<StudySchedule> _convertToStudySchedules({
+    required List<ApiPrediction> predictions,
+    required Exam exam,
+    required TimeOfDay studyStartTime,
+    required int studyBreak
+  }){
+    List<StudySchedule> schedules = [];
+    DateTime currentDate = DateTime.now().add(const Duration(days: 1)); //start from tomorrow
 
+    while (currentDate.isBefore(exam.date) && currentDate.isBefore(DateTime.now().add(const Duration(days: 7)))) {
+      //add a slot every day for a week unless exam is before 
+      DateTime startTime = DateTime(
+        currentDate.year,
+        currentDate.month,
+        currentDate.day,
+        studyStartTime.hour,
+        studyStartTime.minute,
+      ); // Combine date and time of day
+      for (var prediction in predictions) {
+        DateTime endTime = startTime.add(Duration(minutes: prediction.studyDuration));
+
+        schedules.add(StudySchedule(
+          examId: exam.id!,
+          subject: exam.subject,
+          topic: prediction.topic,
+          startTime: startTime,
+          endTime: endTime,
+        ));
+
+        startTime = endTime.add(Duration(minutes: studyBreak));
+      }
+      currentDate = currentDate.add(const Duration(days: 1)); // Move to the next day
+    }
+    return schedules;
+  }
+
+  Future<void> generateSchedule(Exam exam, BuildContext context) async{
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center( 
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
     try{
       final predictions = await _fetchPredictions(exam.topics);
-      print(' #####RECEIVED DATA:'); // Start printing on a new line
-      for(ApiPrediction prediction in predictions) {
-        print("Topic: ${prediction.topic}");
-        print("Study Duration: ${prediction.studyDuration} minutes");
-      };
+      final schedules = _convertToStudySchedules(
+        predictions: predictions,
+        exam: exam, 
+        studyStartTime: const TimeOfDay(hour: 15, minute: 0,),
+        studyBreak: 30
+      );
+      await FirestoreService().addStudySchedules(schedules);
+      Navigator.of(context).pop();
+      Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
     }catch(e){
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
