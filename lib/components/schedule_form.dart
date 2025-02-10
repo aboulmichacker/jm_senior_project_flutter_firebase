@@ -59,7 +59,7 @@ class _ScheduleFormState extends State<ScheduleForm> {
     ).then((value) {
       if (value != null) {
         setState(() {
-          _startTime = DateTime(
+          _endTime = DateTime(
             widget.selectedTime.year,
             widget.selectedTime.month,
             widget.selectedTime.day,
@@ -87,7 +87,6 @@ class _ScheduleFormState extends State<ScheduleForm> {
       });
       final newStudySchedule = StudySchedule(
         examId: widget.exam.id!,
-        subject: widget.exam.subject,
         topic: _selectedTopic!,
         startTime: _startTime,
         endTime: _endTime,

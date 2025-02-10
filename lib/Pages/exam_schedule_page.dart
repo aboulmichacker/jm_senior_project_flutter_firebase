@@ -52,7 +52,6 @@ class _ScheduleState extends State<Schedule> {
         examId: schedule.examId,
         startTime: schedule.startTime,
         endTime: schedule.endTime,
-        subject: schedule.subject,
         topic: schedule.topic);
     await FirestoreService().deletestudySchedule(scheduleId);
 
@@ -102,7 +101,7 @@ class _ScheduleState extends State<Schedule> {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: StreamBuilder<List<StudySchedule>>(
-            stream: FirestoreService().getstudySchedules(widget.exam.id!),
+            stream: FirestoreService().getstudySchedulesforExam(widget.exam.id!),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -120,7 +119,7 @@ class _ScheduleState extends State<Schedule> {
                   subject: schedule.topic,
                   startTime: schedule.startTime,
                   endTime: schedule.endTime,
-                  color: _getColor(schedule.subject),
+                  color: _getColor(widget.exam.subject),
                 );
               }).toList();
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jm_senior/Pages/exam_schedule.dart';
+import 'package:jm_senior/Pages/exam_schedule_page.dart';
 import 'package:jm_senior/components/add_exam_form.dart';
 import 'package:jm_senior/components/delete_confirmation_dialog.dart';
 import 'package:jm_senior/models/exam_model.dart';

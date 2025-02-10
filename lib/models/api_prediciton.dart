@@ -1,6 +1,6 @@
 class ApiPrediction{
   final String topic;
-  final int studyDuration;
+  final double studyDuration;
 
   ApiPrediction({
     required this.topic,
@@ -11,7 +11,7 @@ class ApiPrediction{
   factory ApiPrediction.fromJSON(Map<String,dynamic> data){
     return ApiPrediction(
       topic: data['topic'] as String, 
-      studyDuration: data['study_duration'] as int,
+      studyDuration: data['study_duration'] as double,
     );
   }
 }
