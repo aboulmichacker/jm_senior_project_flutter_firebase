@@ -20,20 +20,41 @@ class _ScheduleState extends State<Schedule> {
   List<Exam> exams = [];
   DateTime? selectedTime;
   Exam? currentExam;
-
+  bool _examsLoaded = false;
   @override
   void initState(){
     super.initState();
     currentExam = widget.exam;
+    _loadExams();
   }
 
   Future<void> _loadExams() async {
-    final fetchedExams = await FirestoreService().getExamsList();
-    exams = fetchedExams;  
+    if(!_examsLoaded){
+      final fetchedExams = await FirestoreService().getExamsList();
+      setState(() {
+        exams = fetchedExams;  
+        _examsLoaded = true;
+      });
+    }
   }
 
   void _setTime(CalendarTapDetails details) {
     selectedTime = details.date!;
+  }
+
+  List<Appointment> _mapSchedulesToAppointments(
+      List<StudySchedule> schedules, List<Exam> exams) {
+    return schedules.map((schedule) {
+      Exam scheduleExam =
+          exams.firstWhere((exam) => exam.id == schedule.examId);
+      return Appointment(
+        id: schedule.id,
+        subject: schedule.topic,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        color: _getColor(scheduleExam.subject),
+      );
+    }).toList();
   }
 
   Color _getColor(String subject) {
@@ -114,16 +135,9 @@ class _ScheduleState extends State<Schedule> {
           child: const Icon(Icons.add),
         ),
       ),
-      body: FutureBuilder<void>(
-        future: _loadExams(),
-        builder:(context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-        return Column(
+      body: 
+      _examsLoaded ?
+      Column(
           children: [
             Padding(
               padding: const EdgeInsets.all(10.0),
@@ -172,17 +186,7 @@ class _ScheduleState extends State<Schedule> {
                       
                       //map the schedules from the database to UI elements as an 
                       //"Appointment" object provided by the sfcalendar library
-                      List<Appointment> appointments = filteredSchedules.map((schedule) {
-                        Exam scheduleExam = exams.firstWhere((exam) => exam.id == schedule.examId);
-                        //get the corresponding exam for each schedule to set the color
-                        return Appointment(
-                          id: schedule.id,
-                          subject: schedule.topic,
-                          startTime: schedule.startTime,
-                          endTime: schedule.endTime,
-                          color: _getColor(scheduleExam.subject),
-                        );
-                      }).toList();
+                      List<Appointment> appointments = _mapSchedulesToAppointments(filteredSchedules, exams);
               
                       return SfCalendar(
                         view: CalendarView.week,
@@ -216,9 +220,7 @@ class _ScheduleState extends State<Schedule> {
               ),
             ),
           ],
-        );
-        },
-      ),
+      ) : const Center(child: CircularProgressIndicator())
     );
   }
 }

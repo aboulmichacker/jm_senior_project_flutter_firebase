@@ -69,9 +69,14 @@ class FirestoreService {
     return exams;
   }
 
-  Future<void> deleteExam(String documentID) async {
-    await _db.collection('exams').doc(documentID).delete();
-        // Get all schedules
+  Future<void> updateExam({required Exam exam}) async{
+    await _db.collection('exams')
+        .doc(exam.id)
+        .update(exam.toFirestore(currentUser!.uid));
+  }
+
+  Future<void> deleteAllExamSchedules(String documentID) async{
+    // Get all schedules
     final QuerySnapshot<Map<String, dynamic>> schedulesSnapshot =
         await _db.collection('studySchedules')
             .where('examId', isEqualTo: documentID)
@@ -81,6 +86,11 @@ class FirestoreService {
     for (var doc in schedulesSnapshot.docs) {
       await doc.reference.delete();
     }
+  }
+
+  Future<void> deleteExam(String documentID) async {
+    await _db.collection('exams').doc(documentID).delete();
+    await deleteAllExamSchedules(documentID);
   }
 
     

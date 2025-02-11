@@ -5,6 +5,7 @@ class Exam {
   final String subject;
   final List<String> topics;
   final DateTime date;
+  bool hasSchedule;
 
 
   Exam({
@@ -12,7 +13,8 @@ class Exam {
     this.userId,
     required this.subject,
     required this.date,
-    required this.topics
+    required this.topics,
+    required this.hasSchedule
   });
 
   // Convert from Firestore document to Exam
@@ -22,7 +24,8 @@ class Exam {
       userId: data['userId'] as String,
       subject: data['subject'] as String,
       date: (data['date'] as Timestamp).toDate(),
-      topics: List<String>.from(data['topics'] as List<dynamic>)
+      topics: List<String>.from(data['topics'] as List<dynamic>),
+      hasSchedule: data['hasSchedule'] as bool
     );
   }
 
@@ -32,7 +35,8 @@ class Exam {
       'userId': uid,
       'subject': subject,
       'date': date,
-      'topics': topics
+      'topics': topics,
+      'hasSchedule': hasSchedule
     };
   }
 }

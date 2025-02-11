@@ -4,14 +4,15 @@ import 'package:jm_senior/components/subject_topic_picker.dart';
 import 'package:jm_senior/models/exam_model.dart';
 import 'package:jm_senior/services/firestore_service.dart';
 
-class AddExamForm extends StatefulWidget {
-  const AddExamForm({super.key});
+class ExamForm extends StatefulWidget {
+  final Exam? exam;
+  const ExamForm({super.key, this.exam});
 
   @override
-  State<AddExamForm> createState() => _AddExamFormState();
+  State<ExamForm> createState() => _ExamFormState();
 }
 
-class _AddExamFormState extends State<AddExamForm> {
+class _ExamFormState extends State<ExamForm> {
   final _formKey = GlobalKey<FormState>();
   final DateFormat _dateFormatter = DateFormat('yMMMMEEEEd');
   final DateFormat _timeFormatter = DateFormat('hh:mm a');
@@ -23,29 +24,46 @@ class _AddExamFormState extends State<AddExamForm> {
   DateTime _dateTime = DateTime.now();
   List<String> _topics = [];
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize form fields if updating an existing exam
+    if (widget.exam != null) {
+      _subject = widget.exam!.subject;
+      _selectedDate = widget.exam!.date;
+      _selectedTime = TimeOfDay.fromDateTime(widget.exam!.date);
+      _dateTime = widget.exam!.date;
+      _topics = List.from(widget.exam!.topics);  // Create a copy of the list
+    }
+  }
+
   void _selectDate(BuildContext context) {
     showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     ).then((value) {
-      setState(() {
-        _selectedDate = value!;
-      });
-      _setDateTime();
+      if(value != null){
+        setState(() {
+          _selectedDate = value;
+          _setDateTime();
+        });
+      }
     });
   }
 
   void _selectTime(BuildContext context) {
     showTimePicker(
       context: context,
-      initialTime: const TimeOfDay(hour: 12, minute: 0),
+      initialTime: _selectedTime ?? const TimeOfDay(hour: 12, minute: 0),
     ).then((value) {
-      setState(() {
-        _selectedTime = value!;
-      });
-      _setDateTime();
+      if(value != null){
+        setState(() {
+          _selectedTime = value;
+          _setDateTime();
+        });
+      }
     });
   }
 
@@ -74,20 +92,38 @@ class _AddExamFormState extends State<AddExamForm> {
     return null;
   }
 
-  Future<void> _addExam() async {
+  Future<void> _addOrUpdateExam() async {
     if (_formKey.currentState!.validate()) {
       try {
         setState(() {
           _isLoading = true;
         });
-        await FirestoreService()
-            .addExam(exam: Exam(subject: _subject!, date: _dateTime, topics: _topics));
+        if(widget.exam == null){
+          await FirestoreService().addExam(
+            exam: Exam(
+                subject: _subject!,
+                date: _dateTime,
+                topics: _topics,
+                hasSchedule: false
+          ));
+        }else{
+          await FirestoreService().updateExam(
+            exam: Exam(
+              id: widget.exam!.id,
+              subject: _subject!,
+              date: _dateTime,
+              topics: _topics,
+              hasSchedule: widget.exam!.hasSchedule
+            )
+          );
+        }
+
         setState(() {
           _isLoading = false;
         });
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Exam added successfully!')),
+          SnackBar(content: Text('Exam ${widget.exam != null ? 'updated' : 'added' } successfully!')),
         );
       } catch (e) {
         setState(() {
@@ -113,11 +149,17 @@ class _AddExamFormState extends State<AddExamForm> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                widget.exam == null ?
                 const Text(
                   'Add an Exam',
                   style: TextStyle(fontSize: 30),
+                ) :
+                const Text(
+                  'Edit Exam',
+                  style: TextStyle(fontSize: 30),
                 ),
                 SubjectTopicPicker(
+                  initialSubject: widget.exam?.subject,
                   onSubjectSelected: (subject){
                     _subject = subject;
                     setState(() {
@@ -187,8 +229,8 @@ class _AddExamFormState extends State<AddExamForm> {
                 _isLoading
                     ? const CircularProgressIndicator()
                     : ElevatedButton(
-                        onPressed: _addExam,
-                        child: const Text('Add Exam'),
+                        onPressed: _addOrUpdateExam,
+                        child: widget.exam == null ? const Text('Add Exam') : const Text("Update Exam"),
                       ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),

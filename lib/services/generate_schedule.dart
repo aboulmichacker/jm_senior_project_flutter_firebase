@@ -236,6 +236,9 @@ class GenerateSchedule {
       },
     );
     try{
+      if(exam.hasSchedule){ //crucial if we need to update an existing schedule
+        await FirestoreService().deleteAllExamSchedules(exam.id!);
+      }
       final predictions = await _fetchPredictions(exam.topics);
       final schedules = await _convertToStudySchedules(
         predictions: predictions,
@@ -245,6 +248,10 @@ class GenerateSchedule {
         sessionLength: 45
       );
       await FirestoreService().addStudySchedules(schedules);
+      //set exam.hasSchedule to true
+      exam.hasSchedule = true;
+      await FirestoreService().updateExam(exam: exam);
+
       Navigator.of(context).pop();
       Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
     }catch(e){

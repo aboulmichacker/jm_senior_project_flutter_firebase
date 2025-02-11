@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:jm_senior/Pages/schedules_page.dart';
-import 'package:jm_senior/components/add_exam_form.dart';
+import 'package:jm_senior/components/exam_form.dart';
 import 'package:jm_senior/components/delete_confirmation_dialog.dart';
 import 'package:jm_senior/models/exam_model.dart';
 import 'package:jm_senior/services/firestore_service.dart';
@@ -14,12 +14,16 @@ class ExamsPage extends StatefulWidget {
 }
 
 class _ExamsPageState extends State<ExamsPage> {
-  Future<void> _showAddExamForm(BuildContext context) async {
+  Future<void> _showExamForm(BuildContext context, Exam? exam) async {
     return showModalBottomSheet(
       isScrollControlled: true,
       context: context,
       builder: (BuildContext context) {
-        return  const AddExamForm();
+        if(exam != null){
+          return  ExamForm(exam: exam,);
+        }else{
+          return const ExamForm();
+        }
       },
     );
   }
@@ -45,9 +49,7 @@ class _ExamsPageState extends State<ExamsPage> {
         title: const Text('My Exams'),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAddExamForm(context);
-        },
+        onPressed: () => _showExamForm(context, null),
         child: const Icon(Icons.add),
       ),
       body: StreamBuilder<List<Exam>>(
@@ -112,15 +114,25 @@ class _ExamsPageState extends State<ExamsPage> {
                               ),
                               child: const Text("Delete Exam")
                             ),
-                            ElevatedButton.icon(
+                            ElevatedButton(
+                              onPressed: () => _showExamForm(context, exam),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey,
+                                foregroundColor: Colors.white
+                              ),
+                              child: const Text("Edit Exam")
+                            ),
+                          ],
+                        ),
+                        Center(
+                          child: ElevatedButton.icon(
                               onPressed: () {
                                 GenerateSchedule().generateSchedule(exam, context);
                               },
                               icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white,),
-                              label: const Text("Generate Study Schedule"),
+                              label: exam.hasSchedule ? const Text("Update Schedule") :const Text("Generate Study Schedule"),
                             ),
-                          ],
-                        )
+                        ),
                       ],
                     ),
                   ),

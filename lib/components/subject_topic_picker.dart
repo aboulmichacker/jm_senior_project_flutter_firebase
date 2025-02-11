@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 class SubjectTopicPicker extends StatefulWidget {
   final Function(String?) onSubjectSelected;
   final Function(String?) onTopicSelected;
+  final String? initialSubject;
   const SubjectTopicPicker({super.key, 
     required this.onSubjectSelected, 
-    required this.onTopicSelected, 
+    required this.onTopicSelected,
+    this.initialSubject,
   });
 
   @override
@@ -48,7 +50,7 @@ class _SubjectTopicPickerState extends State<SubjectTopicPicker> {
 
         DropdownButtonFormField<String>(
           decoration: const InputDecoration(labelText: 'Select Subject'),
-          value: _selectedSubject,
+          value: widget.initialSubject ?? _selectedSubject,
           items: _topics.keys.map((subject) => DropdownMenuItem<String>(
                 value: subject,
                 child: Text(subject),
