@@ -32,7 +32,7 @@ class FirestoreService {
     return null;
   }
 
-    Future<DocumentReference?> addExam({required Exam exam}) async {
+  Future<DocumentReference?> addExam({required Exam exam}) async {
     try {
       if (currentUser != null) {
         return await _db.collection('exams')
@@ -44,7 +44,7 @@ class FirestoreService {
     }
   }
 
-  Stream<List<Exam>> getExams() {
+  Stream<List<Exam>> getExamsStream() {
     if (currentUser == null) {
       return Stream.value([]); // Return an empty stream if no user is logged in.
     }
@@ -56,6 +56,17 @@ class FirestoreService {
             .map((snapshot) => snapshot.docs
               .map((doc) => Exam.fromFirestore(doc.id, doc.data()))
             .toList());
+  }
+
+  Future<List<Exam>> getExamsList() async {
+    List<Exam> exams = [];
+    final examsSnapshot = await _db.collection('exams')
+                                        .where('userId', isEqualTo: currentUser!.uid).get();
+    for(DocumentSnapshot doc in examsSnapshot.docs){
+      Exam exam = Exam.fromFirestore(doc.id, doc.data() as Map<String,dynamic>);
+      exams.add(exam);
+    }
+    return exams;
   }
 
   Future<void> deleteExam(String documentID) async {
@@ -103,16 +114,16 @@ class FirestoreService {
         .doc(id).delete();
   }
 
-  Stream<List<StudySchedule>> getstudySchedulesforExam(String examId) {
+  Stream<List<StudySchedule>> getSchedulesStream() {
     return _db.collection('studySchedules')
-        .where('examId', isEqualTo: examId)
+        .where('userId', isEqualTo: currentUser!.uid)
         .snapshots()
         .map((snapshot) => snapshot.docs
           .map((doc) => StudySchedule.fromFirestore(doc.id, doc.data()))
           .toList());
-    }
+  }
   
-  Future<List<StudySchedule>> getListAllStudySchedules() async{
+  Future<List<StudySchedule>> getSchedulesList() async{
     List<StudySchedule> schedules = [];
     final schedulesSnapshot = await _db.collection('studySchedules')
                                         .where('userId', isEqualTo: currentUser!.uid).get();

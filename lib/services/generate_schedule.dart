@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jm_senior/Pages/exam_schedule_page.dart';
+import 'package:jm_senior/Pages/schedules_page.dart';
 import 'package:jm_senior/models/api_prediciton.dart';
 import 'package:jm_senior/models/exam_model.dart';
 import 'package:dio/dio.dart';
@@ -81,7 +81,7 @@ class GenerateSchedule {
   );
 
   // Fetch existing schedules.
-  List<StudySchedule> existingSchedules = await FirestoreService().getListAllStudySchedules();
+  List<StudySchedule> existingSchedules = await FirestoreService().getSchedulesList();
 
     while (dayIterator.isBefore(examDate) || dayIterator.isAtSameMomentAs(examDate)) {
       DateTime startOfDay = dayIterator;

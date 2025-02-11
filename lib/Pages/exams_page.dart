@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jm_senior/Pages/exam_schedule_page.dart';
+import 'package:jm_senior/Pages/schedules_page.dart';
 import 'package:jm_senior/components/add_exam_form.dart';
 import 'package:jm_senior/components/delete_confirmation_dialog.dart';
 import 'package:jm_senior/models/exam_model.dart';
@@ -19,7 +19,7 @@ class _ExamsPageState extends State<ExamsPage> {
       isScrollControlled: true,
       context: context,
       builder: (BuildContext context) {
-        return const Expanded(child: AddExamForm());
+        return  const AddExamForm();
       },
     );
   }
@@ -51,7 +51,7 @@ class _ExamsPageState extends State<ExamsPage> {
         child: const Icon(Icons.add),
       ),
       body: StreamBuilder<List<Exam>>(
-        stream: FirestoreService().getExams(),
+        stream: FirestoreService().getExamsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -72,54 +72,57 @@ class _ExamsPageState extends State<ExamsPage> {
             itemBuilder: (context, index) {
               Exam exam = exams[index];
               
-              return Card(
-
-                margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ListTile(
-                        title: Text(
-                          exam.subject,
-                          style: const TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.bold
+              return GestureDetector(
+                onTap:(){
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
+                },
+                child: Card(
+                  margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          title: Text(
+                            exam.subject,
+                            style: const TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold
+                            ),
+                          ),
+                          subtitle: Text(DateFormat('EEEE MMMM d \'at\' h:mm a').format(exam.date)),
+                        ),
+                        const SizedBox(height: 5,),
+                        GestureDetector(
+                          child: Wrap(
+                            spacing: 5.0,
+                            children: exam.topics.map((topic) => Chip(label: Text(topic))).toList(),
                           ),
                         ),
-                        subtitle: Text(DateFormat('EEEE MMMM d \'at\' h:mm a').format(exam.date)),
-                        onTap:(){
-                          Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
-                        } 
-                      ),
-                      const SizedBox(height: 5,),
-                      Wrap(
-                        spacing: 5.0,
-                        children: exam.topics.map((topic) => Chip(label: Text(topic))).toList(),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () => _deleteExam(exam.id!), 
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => _deleteExam(exam.id!), 
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white
+                              ),
+                              child: const Text("Delete Exam")
                             ),
-                            child: const Text("Delete Exam")
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              GenerateSchedule().generateSchedule(exam, context);
-                            },
-                            icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white,),
-                            label: const Text("Generate Study Schedule"),
-                          ),
-                        ],
-                      )
-                    ],
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                GenerateSchedule().generateSchedule(exam, context);
+                              },
+                              icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white,),
+                              label: const Text("Generate Study Schedule"),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
                   ),
                 ),
               );
