@@ -35,4 +35,8 @@ ThemeData myThemeData = ThemeData(
     backgroundColor: Colors.yellow.shade700,
     foregroundColor: Colors.white,
   ),
+  sliderTheme: SliderThemeData(
+    activeTrackColor: Colors.yellow.shade700,
+    thumbColor: Colors.yellow.shade700
+  )
 );

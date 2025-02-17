@@ -30,12 +30,12 @@ class Schemas {
             description: 'The text of the question',
             nullable: false,
           ),
-          'answer': Schema.string(
+          'correctAnswer': Schema.string(
             description: 'The expected or model answer',
             nullable: false,
           ),
         },
-        requiredProperties: ['questionText', 'answer'],
+        requiredProperties: ['questionText', 'correctAnswer'],
       ),
       'tfQuestion': Schema.object(
         description: 'True/False Question',
@@ -72,5 +72,23 @@ class Schemas {
       'tfQuestion',
       'fillInTheBlankQuestion',
       ],
+    );
+
+    final Schema resultSchema = Schema.object(
+      properties: {
+        "accuracy_score":  Schema.integer(
+          description: 'Quiz result accuracy score from 0 to 100',
+          nullable: false
+        ),
+        "open_ended_suggestions": Schema.string(
+          description: "Suggestions to improve answer to open ended question to match the correct answer", 
+          nullable: false
+        ),
+        "fill_in_the_blank_suggestion": Schema.string(
+          description: "Suggestions to improve answer to fill in the blank question to match the correct answer.", 
+          nullable: false
+        )
+      },
+      requiredProperties: ["accuracy_score"]
     );
 }

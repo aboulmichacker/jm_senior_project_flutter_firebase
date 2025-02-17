@@ -7,26 +7,31 @@ import 'package:jm_senior/models/study_schedule_model.dart';
 import 'dart:math';
 
 import 'package:jm_senior/services/firestore_service.dart';
+import 'package:jm_senior/services/time_string_conversion.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 class GenerateSchedule {
 
   Future<List<ApiPrediction>> _fetchPredictions(List<String> topics) async{
-    //THIS MUST BE CONVERTED TO AN OBJECT LATER ON
     //DATA TO BE FETCHED FROM SOLVED QUIZZES
     //FOR TESTING PURPOSES ONLY.
-    List<Map<String, dynamic>> quizResultsData = topics.map((topic){
-        final quizTimeTaken = Random().nextInt(26) + 5; // Random quiz time taken between 5 and 30 minutes
-        final accuracy = (Random().nextDouble() * 0.8 + 0.2).toStringAsFixed(1); // Random accuracy between 0.2 and 1
 
-        return {
-          "topic": topic,
-          "quiz_time_taken": quizTimeTaken,
-          "accuracy": accuracy, // Convert back to double
-        };
-    }).toList();
 
-    print(' #####PASSED DATA: $quizResultsData');
+
+    // List<Map<String, dynamic>> quizResultsData = topics.map((topic){
+    //     final quizTimeTaken = Random().nextInt(26) + 5; // Random quiz time taken between 5 and 30 minutes
+    //     final accuracy = (Random().nextDouble() * 0.8 + 0.2).toStringAsFixed(1); // Random accuracy between 0.2 and 1
+
+    //     return {
+    //       "topic": topic,
+    //       "quiz_time_taken": quizTimeTaken,
+    //       "accuracy": accuracy, // Convert back to double
+    //     };
+    // }).toList();
+
+    // print(' #####PASSED DATA: $quizResultsData');
     
     try{
+      List<Map<String,dynamic>> quizResultsData = await FirestoreService().getQuizResultsData(topics);
       final dio = Dio(BaseOptions(
           connectTimeout: const Duration(milliseconds: 5000), // 5 seconds connection timeout
           receiveTimeout: const Duration(milliseconds: 3000), // 3 seconds receive timeout
@@ -68,6 +73,7 @@ class GenerateSchedule {
 
   Future<List<Map<String, DateTime>>> _getAvailableTimeSlots({
     required TimeOfDay studyStartTime,
+    required TimeOfDay studyEndTime,
     required DateTime examDate,
     required int studyBreak
   }) async {
@@ -85,7 +91,7 @@ class GenerateSchedule {
 
     while (dayIterator.isBefore(examDate) || dayIterator.isAtSameMomentAs(examDate)) {
       DateTime startOfDay = dayIterator;
-      DateTime endOfDay = DateTime(dayIterator.year, dayIterator.month, dayIterator.day, 23, 0);
+      DateTime endOfDay = DateTime(dayIterator.year, dayIterator.month, dayIterator.day, studyEndTime.hour, studyEndTime.minute);
 
       if (startOfDay.isBefore(endOfDay)) {
         availableTimeSlots.add({"start": startOfDay, "end": endOfDay});
@@ -148,6 +154,7 @@ class GenerateSchedule {
     required List<ApiPrediction> predictions,
     required Exam exam,
     required TimeOfDay studyStartTime,
+    required TimeOfDay studyEndTime,
     required int studyBreak,
     required int sessionLength
   }) async {
@@ -156,7 +163,8 @@ class GenerateSchedule {
     DateTime examDate = exam.date.subtract(const Duration(days: 1)); //stop scheduling the day before the exam.
     
     List<Map<String,DateTime>> availableTimeSlots = await _getAvailableTimeSlots(
-      studyStartTime: studyStartTime, 
+      studyStartTime: studyStartTime,
+      studyEndTime: studyEndTime, 
       examDate: examDate, 
       studyBreak: studyBreak
     );
@@ -236,6 +244,12 @@ class GenerateSchedule {
       },
     );
     try{
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final breakDuration = prefs.getInt('breakDuration');
+      final sessionDuration = prefs.getInt('studySessionDuration');
+      final String studyStartTimeString = prefs.getString('studyStartTime') ?? '15:00';
+      final String studyEndTimeString = prefs.getString('studyEndTime') ?? '23:00';
+
       if(exam.hasSchedule){ //crucial if we need to update an existing schedule
         await FirestoreService().deleteAllExamSchedules(exam.id!);
       }
@@ -243,9 +257,10 @@ class GenerateSchedule {
       final schedules = await _convertToStudySchedules(
         predictions: predictions,
         exam: exam, 
-        studyStartTime: const TimeOfDay(hour: 15, minute: 0,),
-        studyBreak: 30,
-        sessionLength: 45
+        studyStartTime: TimeStringConversion().stringToTimeOfDay(studyStartTimeString),
+        studyEndTime: TimeStringConversion().stringToTimeOfDay(studyEndTimeString),
+        studyBreak: breakDuration ?? 45,
+        sessionLength: sessionDuration ?? 15
       );
       await FirestoreService().addStudySchedules(schedules);
       //set exam.hasSchedule to true

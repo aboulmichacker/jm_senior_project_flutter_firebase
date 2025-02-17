@@ -46,7 +46,7 @@ class _ExamsPageState extends State<ExamsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Exams'),
+        title: const Text('My Exams', style: TextStyle(fontWeight: FontWeight.bold),),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showExamForm(context, null),
