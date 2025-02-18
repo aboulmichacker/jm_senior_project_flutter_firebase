@@ -81,11 +81,11 @@ class Schemas {
           nullable: false
         ),
         "open_ended_suggestions": Schema.string(
-          description: "Suggestions to improve answer to open ended question to match the correct answer", 
+          description: "Suggestions to improve answer to open ended question to match the correct answer. Return 'Your answer is correct!' instead of null", 
           nullable: false
         ),
         "fill_in_the_blank_suggestion": Schema.string(
-          description: "Suggestions to improve answer to fill in the blank question to match the correct answer.", 
+          description: "Suggestions to improve answer to fill in the blank question to match the correct answer. Return 'Your answer is correct!' instead of null", 
           nullable: false
         )
       },

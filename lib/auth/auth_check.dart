@@ -1,7 +1,7 @@
 //Checks if user was logged in before or not
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:jm_senior/auth/login_page.dart';
+import 'package:jm_senior/auth/login_register_parent.dart';
 import 'package:jm_senior/homepage.dart';
   
 class AuthCheck extends StatelessWidget {
@@ -20,7 +20,7 @@ class AuthCheck extends StatelessWidget {
             return const HomePage();
           }
           else{
-            return const LoginPage();
+            return const LoginRegisterParent();
           }
         },
       ),

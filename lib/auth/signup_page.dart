@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:jm_senior/auth/auth_service.dart';
-import 'package:jm_senior/homepage.dart';
-import 'login_page.dart';
 class SignupPage extends StatefulWidget {
-  const SignupPage({super.key});
+  final VoidCallback onToggleScreen;
+  const SignupPage({super.key, required this.onToggleScreen});
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -30,14 +29,7 @@ class _SignupPageState extends State<SignupPage> {
             username: _usernameController.text.trim(),
             email: _emailController.text.trim(),
             password: _passwordController.text,
-            context: context
         );
-        // Navigate to the homepage after signup
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-        (route) => false, // Removes all previous routes
-      );
       }
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,9 +38,10 @@ class _SignupPageState extends State<SignupPage> {
           backgroundColor: Colors.red,
         )
       );
+    }finally{
       setState(() {
-        _isLoading = false;
-        _buttonEnabled = true;
+          _isLoading = false;
+          _buttonEnabled = true;
       });
     }
   }
@@ -179,7 +172,7 @@ class _SignupPageState extends State<SignupPage> {
                   const SizedBox(height: 20),
                   // Login link
                   GestureDetector(
-                    onTap: () => goToLogin(context),
+                    onTap: widget.onToggleScreen,
                     child: const Text(
                       "Already Have an Account? Login Here",
                       style: TextStyle(
@@ -195,8 +188,4 @@ class _SignupPageState extends State<SignupPage> {
         )
     );
   }
-  goToLogin(BuildContext context) => Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (context) => const LoginPage()),
-  );
 }

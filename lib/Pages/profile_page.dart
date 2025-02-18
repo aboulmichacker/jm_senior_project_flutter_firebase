@@ -156,7 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   Center(
                     child: ElevatedButton(
                       onPressed: () async {
-                          await AuthService().signout(context: context);
+                          await AuthService().signout();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.yellow.shade700,

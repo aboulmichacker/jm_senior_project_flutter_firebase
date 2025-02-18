@@ -2,6 +2,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:jm_senior/models/user_model.dart';
 import 'package:jm_senior/services/firestore_service.dart';
 class AuthService{
 
@@ -36,8 +37,6 @@ class AuthService{
     required String username,
     required String email,
     required String password,
-
-    required BuildContext context
   }) async {
 
     try {
@@ -46,15 +45,14 @@ class AuthService{
           email: email,
           password: password
       );
-      String userId = userCredential.user!.uid;
 
-       await FirestoreService().addUser(
-        userId: userId,
+      UserModel user = UserModel(
+        id: userCredential.user!.uid,
         username: username,
-        email: email,
+        email: email
       );
 
-
+      await FirestoreService().addUser(user);
 
     } on FirebaseAuthException catch(e) {
       if (e.code == 'weak-password') {
@@ -68,9 +66,7 @@ class AuthService{
     }
   }
 
-  Future<void> signout({
-    required BuildContext context
-  }) async {
+  Future<void> signout() async {
     await FirebaseAuth.instance.signOut();
   }
 }

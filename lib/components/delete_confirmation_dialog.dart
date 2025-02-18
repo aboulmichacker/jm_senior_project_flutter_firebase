@@ -4,12 +4,14 @@ class DeleteConfirmationDialog extends StatelessWidget {
   final String title;
   final String message;
   final VoidCallback onConfirm;
+  final VoidCallback onCancel;
 
   const DeleteConfirmationDialog({
     super.key,
     required this.title,
     required this.message,
     required this.onConfirm,
+    required this.onCancel,
   });
 
   @override
@@ -19,14 +21,11 @@ class DeleteConfirmationDialog extends StatelessWidget {
       content: Text(message),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => onCancel(),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () {
-            onConfirm();
-            Navigator.of(context).pop();
-          },
+          onPressed: () => onConfirm(),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red,
           ),

@@ -10,6 +10,7 @@ class Quiz{
   FillInTheBlankQuestion fillInTheBlankQuestion;
   int? accuracy;
   int? timeTaken;
+  DateTime? timestamp;
 
   Quiz({
     this.id,
@@ -21,6 +22,7 @@ class Quiz{
     required this.fillInTheBlankQuestion,
     this.accuracy,
     this.timeTaken,
+    this.timestamp
   });
 
   Map<String, dynamic> toFirestore(String uid) {
@@ -40,13 +42,17 @@ class Quiz{
   factory Quiz.fromFirestore(String id, Map<String, dynamic> data) {
     return Quiz(
       id: id,
+      topic: data['topic'],
       userId: data['userId'] as String,
-      mcQuestion: MCQuestion.fromJson(data['mcQuestion'] as Map<String, dynamic>),
-      tfQuestion: TFQuestion.fromJson(data['tfQuestion'] as Map<String, dynamic>),
+      mcQuestion: MCQuestion.fromFirestore(data['mcQuestion'] as Map<String, dynamic>),
+      tfQuestion: TFQuestion.fromFirestore(data['tfQuestion'] as Map<String, dynamic>),
       openEndedQuestion:
-          OpenEndedQuestion.fromJson(data['openEndedQuestion'] as Map<String, dynamic>),
-      fillInTheBlankQuestion: FillInTheBlankQuestion.fromJson(
+          OpenEndedQuestion.fromFirestore(data['openEndedQuestion'] as Map<String, dynamic>),
+      fillInTheBlankQuestion: FillInTheBlankQuestion.fromFirestore(
           data['fillInTheBlankQuestion'] as Map<String, dynamic>),
+      accuracy: data["accuracy"],
+      timeTaken: data["timeTaken"],
+      timestamp: (data["timestamp"] as Timestamp).toDate()
     );
   }
   

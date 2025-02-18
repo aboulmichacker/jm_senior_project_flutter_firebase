@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:jm_senior/auth/signup_page.dart';
 import 'package:jm_senior/auth/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final VoidCallback onToggleScreen;
+  const LoginPage({super.key, required this.onToggleScreen});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
                 
                 GestureDetector(
-                  onTap: () => goToSignup(context),
+                  onTap: widget.onToggleScreen,
                   child: const Text(
                     "Don't have an account? Sign Up Here",
                     style: TextStyle(
@@ -143,8 +143,4 @@ class _LoginPageState extends State<LoginPage> {
       )
     );
   }
-  goToSignup(BuildContext context) => Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (context) => const SignupPage()),
-  );
 }

@@ -1,5 +1,5 @@
 class UserModel{
-  final String? id;
+  final String id;
   final String username;
   final String email;
   int studySessionDuration;
@@ -8,7 +8,7 @@ class UserModel{
   String studyEndTime;
   
   UserModel({
-    this.id,
+    required this.id,
     required this.username,
     required this.email,
     this.studySessionDuration = 45,

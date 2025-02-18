@@ -13,15 +13,8 @@ class FirestoreService {
   User? get currentUser => _auth.currentUser;
 
   //USERS
-  Future<void> addUser({
-    required String userId, 
-    required String username,
-    required String email,
-    }) async {
-    await _db.collection('users').doc(userId).set({
-      'username': username,
-      'email': email
-    });
+  Future<void> addUser(UserModel user) async {
+    await _db.collection('users').doc(user.id).set(user.toFirestore());
   }
   
   Future<UserModel?> fetchCurrentUser() async{
@@ -168,6 +161,24 @@ class FirestoreService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<void> deleteQuiz(String documentID) async {
+    await _db.collection('quizzes').doc(documentID).delete();
+  }
+
+  Stream<List<Quiz>> getQuizzesStream(){
+     if (currentUser == null) {
+      return Stream.value([]); 
+    }
+
+    return _db.collection('quizzes')
+          .where('userId', isEqualTo: currentUser!.uid)
+          .orderBy('timestamp') 
+          .snapshots()
+            .map((snapshot) => snapshot.docs
+              .map((doc) => Quiz.fromFirestore(doc.id, doc.data()))
+            .toList());
   }
 
   //QUIZ RESULTS DATA

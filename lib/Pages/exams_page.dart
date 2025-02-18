@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jm_senior/Pages/schedules_page.dart';
 import 'package:jm_senior/components/exam_form.dart';
 import 'package:jm_senior/components/delete_confirmation_dialog.dart';
+import 'package:jm_senior/components/missing_topics_dialog.dart';
 import 'package:jm_senior/models/exam_model.dart';
 import 'package:jm_senior/services/firestore_service.dart';
 import 'package:intl/intl.dart';
@@ -27,20 +28,6 @@ class _ExamsPageState extends State<ExamsPage> {
       },
     );
   }
-
-  Future<void> _deleteExam(String examID) async {
-    showDialog(
-      context: context, 
-      builder: (context) => DeleteConfirmationDialog(
-        title: 'Delete Exam', 
-        message: 'Are you sure you want to delete this exam? This will also delete all related schedules.', 
-        onConfirm: () async{
-          await FirestoreService().deleteExam(examID);
-        }
-      ));
-    
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -74,66 +61,101 @@ class _ExamsPageState extends State<ExamsPage> {
             itemBuilder: (context, index) {
               Exam exam = exams[index];
               
-              return GestureDetector(
-                onTap:(){
-                  Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
+              return Dismissible(
+                key: Key(exam.id!),
+                background: Container(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.only(left: 20.0),
+                  color: Colors.grey,
+                  child: const Icon(Icons.edit, color: Colors.white, size: 40,),
+                ),
+                secondaryBackground: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20.0),
+                  color: Colors.red,
+                  child: const Icon(Icons.delete, color: Colors.white, size: 40),
+                ),
+                confirmDismiss: (direction) async {
+                  if(direction == DismissDirection.endToStart){
+                    return await showDialog<bool>(
+                      context: context, 
+                      builder: (context) => DeleteConfirmationDialog(
+                        title: 'Delete Exam', 
+                        message: 'Are you sure you want to delete this exam? This will also delete all related schedules.',
+                        onConfirm: () => Navigator.of(context).pop(true),
+                        onCancel: () => Navigator.of(context).pop(false),
+                      ),
+                    ) ?? false;
+                  } else {
+                    _showExamForm(context, exam);
+                    return false; //In order not to remove the item from the ui on edit.
+                  }
                 },
-                child: Card(
-                  margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ListTile(
-                          title: Text(
-                            exam.subject,
-                            style: const TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.bold
+                onDismissed: (direction) async{
+                  if(direction == DismissDirection.endToStart){
+                   await FirestoreService().deleteExam(exam.id!);
+                  }
+                },
+                child: GestureDetector(
+                  onTap:(){
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ListTile(
+                            title: Text(
+                              exam.subject,
+                              style: const TextStyle(
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold
+                              ),
                             ),
+                            subtitle: Text(DateFormat('EEEE MMMM d \'at\' HH:mm').format(exam.date)),
                           ),
-                          subtitle: Text(DateFormat('EEEE MMMM d \'at\' h:mm a').format(exam.date)),
-                        ),
-                        const SizedBox(height: 5,),
-                        GestureDetector(
-                          child: Wrap(
+                          const SizedBox(height: 5,),
+                          Wrap(
                             spacing: 5.0,
                             children: exam.topics.map((topic) => Chip(label: Text(topic))).toList(),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () => _deleteExam(exam.id!), 
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white
+                          const SizedBox(height: 10),
+                          Center(
+                            child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  final quizResults = await FirestoreService().getQuizResultsData(exam.topics);
+                                  if(quizResults.isEmpty){
+                                    showDialog(
+                                      context: context, 
+                                      builder: (context) => MissingTopicsDialog(missingTopics: exam.topics)
+                                    );
+                                  }else if( quizResults.length < exam.topics.length){
+                                    // 1. Identify missing topics
+                                    List<String> foundTopics = quizResults.map((result) => result['topic'] as String).toList();
+                                    List<String> missingTopics = exam.topics.where((topic) => !foundTopics.contains(topic)).toList();
+                
+                                    // 2. Generate the schedule (with available data)
+                                    await GenerateSchedule().generateSchedule(exam, quizResults, context);
+                
+                                    // 3. Show dialog with missing topics
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => MissingTopicsDialog(missingTopics: missingTopics)
+                                    );
+                                  }
+                                  else{
+                                    GenerateSchedule().generateSchedule(exam, quizResults, context);
+                                  }
+                                },
+                                icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white,),
+                                label: exam.hasSchedule ? const Text("Update Schedule") :const Text("Generate Study Schedule"),
                               ),
-                              child: const Text("Delete Exam")
-                            ),
-                            ElevatedButton(
-                              onPressed: () => _showExamForm(context, exam),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey,
-                                foregroundColor: Colors.white
-                              ),
-                              child: const Text("Edit Exam")
-                            ),
-                          ],
-                        ),
-                        Center(
-                          child: ElevatedButton.icon(
-                              onPressed: () {
-                                GenerateSchedule().generateSchedule(exam, context);
-                              },
-                              icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white,),
-                              label: exam.hasSchedule ? const Text("Update Schedule") :const Text("Generate Study Schedule"),
-                            ),
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

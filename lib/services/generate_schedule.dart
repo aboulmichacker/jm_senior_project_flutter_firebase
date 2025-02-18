@@ -11,7 +11,7 @@ import 'package:jm_senior/services/time_string_conversion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 class GenerateSchedule {
 
-  Future<List<ApiPrediction>> _fetchPredictions(List<String> topics) async{
+  Future<List<ApiPrediction>> _fetchPredictions(List<String> topics,List<Map<String,dynamic>> quizResultsData) async{
     //DATA TO BE FETCHED FROM SOLVED QUIZZES
     //FOR TESTING PURPOSES ONLY.
 
@@ -28,10 +28,8 @@ class GenerateSchedule {
     //     };
     // }).toList();
 
-    // print(' #####PASSED DATA: $quizResultsData');
     
     try{
-      List<Map<String,dynamic>> quizResultsData = await FirestoreService().getQuizResultsData(topics);
       final dio = Dio(BaseOptions(
           connectTimeout: const Duration(milliseconds: 5000), // 5 seconds connection timeout
           receiveTimeout: const Duration(milliseconds: 3000), // 3 seconds receive timeout
@@ -44,6 +42,7 @@ class GenerateSchedule {
       );
       List<Map<String,dynamic>> listpredictions = List<Map<String,dynamic>>.from(response.data);
       List<ApiPrediction> predictions = listpredictions.map((prediction) => ApiPrediction.fromJSON(prediction)).toList();
+
       return predictions;
 
     } on DioException catch(e){
@@ -233,7 +232,9 @@ class GenerateSchedule {
     return schedules;
   }
 
-  Future<void> generateSchedule(Exam exam, BuildContext context) async{
+  Future<void> generateSchedule(Exam exam,List<Map<String,dynamic>> quizResultsData, BuildContext context) async{
+    final scaffoldContext = context; 
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -253,7 +254,7 @@ class GenerateSchedule {
       if(exam.hasSchedule){ //crucial if we need to update an existing schedule
         await FirestoreService().deleteAllExamSchedules(exam.id!);
       }
-      final predictions = await _fetchPredictions(exam.topics);
+      final predictions = await _fetchPredictions(exam.topics, quizResultsData);
       final schedules = await _convertToStudySchedules(
         predictions: predictions,
         exam: exam, 
@@ -267,11 +268,11 @@ class GenerateSchedule {
       exam.hasSchedule = true;
       await FirestoreService().updateExam(exam: exam);
 
-      Navigator.of(context).pop();
-      Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
+      Navigator.of(context, rootNavigator: true).pop();
+      Navigator.of(scaffoldContext).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
     }catch(e){
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.red,
