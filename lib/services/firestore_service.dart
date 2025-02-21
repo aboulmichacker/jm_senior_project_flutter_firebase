@@ -203,7 +203,7 @@ class FirestoreService {
         // Extract only the required fields
         results.add({
           'topic': data['topic'],
-          'accuracy': data['accuracy']*0.01,
+          'quiz_score': data['score']*0.01,
           'quiz_time_taken': data['timeTaken'],
         });
       }

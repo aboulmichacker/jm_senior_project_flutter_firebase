@@ -20,8 +20,100 @@ class _QuizMePageState extends State<QuizMePage> {
   String? _selectedSubject;
   String? _selectedTopic;
   bool _isLoading = false;
-  Quiz? quiz; //= Quiz.fromJson({"topic":"Electricity and Magnetism","fillInTheBlankQuestion": {"correctAnswer": "circuit", "questionText": "A complete path through which electricity can flow is called a(n) _______."}, "mcQuestion": {"correctAnswer": "parallel", "options": ["series", "parallel", "open", "closed"], "questionText": "What type of circuit has more than one path for the current to flow?"}, "openEndedQuestion": {"correctAnswer": "A magnet attracts iron and other magnetic materials.  It has a north and south pole. Like poles repel each other, and opposite poles attract each other.", "questionText": "Explain the properties of a magnet."}, "tfQuestion": {"correctAnswer": true, "questionText": "Static electricity is the buildup of electrical charges on the surface of an object."}});
-  //SAMPLE QUIZ FOR TESTING PURPOSES. WILL LATER BE REMOVED.
+  Quiz? quiz = Quiz.fromJson(
+    {
+  "mcQuestions": [
+      {
+        "id": "mc1",
+        "questionText": "Solve for x:  2x + 5 = 11",
+        "options": [
+          "2",
+          "3",
+          "4",
+          "6"
+        ],
+        "correctAnswer": "3"
+      },
+      {
+        "id": "mc2",
+        "questionText": "Simplify the expression: 3(y - 4) + 2y",
+        "options": [
+          "5y - 12",
+          "5y - 4",
+          "y - 12",
+          "3y - 12"
+        ],
+        "correctAnswer": "5y - 12"
+      },
+      {
+        "id": "mc3",
+        "questionText": "If a shirt costs USD 20 and is on sale for 25% off, what is the sale price?",
+        "options": [
+          "USD 5",
+          "USD 15",
+          "USD 10",
+          "USD 25"
+        ],
+        "correctAnswer": "USD 15"
+      }
+    ],
+    "openEndedQuestions": [
+      {
+        "id": "oe1",
+        "questionText": "Solve for x:  (x/4) - 7 = 2",
+        "correctAnswer": "36"
+      },
+      {
+        "id": "oe2",
+        "questionText": "A rectangle has a length of (x + 5) cm and a width of 3 cm.  If the area of the rectangle is 24 cm², what is the value of x?",
+        "correctAnswer": "3"
+      }
+    ],
+    "tfQuestions": [
+      {
+        "id": "tf1",
+        "questionText": "The expression 5x + 2x - 3x is equivalent to 4x.",
+        "correctAnswer": true
+      },
+      {
+        "id": "tf2",
+        "questionText": "If 2y = 10, then y = 20.",
+        "correctAnswer": false
+      },
+      {
+        "id": "tf3",
+        "questionText": "In the equation y = mx + b, 'b' represents the slope of the line.",
+        "correctAnswer": false
+      }
+    ],
+    "fillInTheBlankQuestions": [
+      {
+        "id": "fb1",
+        "questionText": "Simplify: 12a - 5a + 2a = ____a",
+        "correctAnswer": "9"
+      },
+      {
+        "id": "fb2",
+        "questionText": "If x + 7 = 15, then x = ____.",
+        "correctAnswer": "8"
+      },
+      {
+        "id": "fb3",
+        "questionText": "The solution to the equation 3n = 21 is n = _____.",
+        "correctAnswer": "7"
+      }
+    ]
+  }
+
+  );
+  @override
+  void initState(){
+    super.initState();
+    if(quiz != null){
+      quiz!.topic = "Algebra";
+    }
+  }
+//FOR TESTING PURPOSES ONLY. TO BE REMOVED LATER.
   Future<void> _generateQuiz() async {
     if(_formKey.currentState!.validate()){
       final apiKey = dotenv.env['GEMINI_API_KEY'];
@@ -29,7 +121,6 @@ class _QuizMePageState extends State<QuizMePage> {
 
       try {
         setState(() {
-          quiz = null;
           _isLoading = true;
         });
         final model = GenerativeModel(
@@ -41,10 +132,17 @@ class _QuizMePageState extends State<QuizMePage> {
         final content = [Content.text(prompt)];
         final response = await model.generateContent(content);
         if(response.text != null){
-          setState(() {
-            quiz = Quiz.fromJson(jsonDecode(response.text!));
-            quiz?.topic = _selectedTopic;
-          });
+            setState(() {
+              quiz = Quiz.fromJson(jsonDecode(response.text!));
+              quiz?.topic = _selectedTopic;
+            });
+        } else {
+          // Handle the case where response.text is null
+          
+          // Show an error message to the user, or perhaps retry the request.
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error generating quiz. Please try again.'), backgroundColor: Colors.red),
+          );
         }
       } catch (e) {
         throw Exception('Error Generating Quiz: ${e.toString()}'); 

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:jm_senior/assets/schemas.dart';
@@ -18,16 +17,15 @@ class QuizWidget extends StatefulWidget {
 }
 
 class _QuizWidgetState extends State<QuizWidget> {
-  late String _selectedMcqOption = widget.quiz.mcQuestion.options[0];
-  bool _selectedTrueOrFalseAnswer = true;
-  final _fillInTheBlankAnswer = TextEditingController();
-  final _openEndedAnswer = TextEditingController();
-
   final _formKey = GlobalKey<FormState>();
+  Map<String, dynamic> userAnswers = {};
+  Map<String, TextEditingController> textControllers = {};
+
+  Map<String, String> suggestions = {};
+
   bool _isLoading = false;
   int? _quizScore;
-  String? _openEndedSuggestion;
-  String? _fillInTheBlankSuggestion;
+ 
 
     // Timer related variables
   int _secondsElapsed = 0;
@@ -38,13 +36,40 @@ class _QuizWidgetState extends State<QuizWidget> {
   @override
   void initState() {
     super.initState();
+    _initializeControllers();
     _startTimer(); // Start the timer when the widget is created
   }
 
   @override
   void dispose() {
     _timer?.cancel(); // Cancel the timer when the widget is disposed
+    for (var controller in textControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+    void _initializeControllers() {
+    // Initialize controllers and default answers for MCQs
+    for (var question in widget.quiz.mcQuestions) {
+      userAnswers[question.id] = question.options[0]; // Default to the first option
+    }
+    // Initialize controllers and default answers for TFQs
+    for (var question in widget.quiz.tfQuestions) {
+      userAnswers[question.id] = true; // Default to true
+    }
+
+    // Initialize controllers for OpenEndedQuestions
+    for (var question in widget.quiz.openEndedQuestions) {
+      textControllers[question.id] = TextEditingController();
+      userAnswers[question.id] = "";
+    }
+
+    // Initialize controllers for FillInTheBlankQuestions
+    for (var question in widget.quiz.fillInTheBlankQuestions) {
+      textControllers[question.id] = TextEditingController();
+      userAnswers[question.id] = "";
+    }
   }
 
   void _startTimer() {
@@ -61,30 +86,46 @@ class _QuizWidgetState extends State<QuizWidget> {
   }
 
   Future<void> _correctQuiz(Quiz quiz) async{
-    int accuracy = 0;
-    if(quiz.mcQuestion.userAnswer == quiz.mcQuestion.correctAnswer){
-      accuracy += 25;
-    }
-    if(quiz.tfQuestion.userAnswer == quiz.tfQuestion.correctAnswer){
-      accuracy += 25;
-    }
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    final prompt = '''
-      Correct the following quiz questions and return an accuracy score from 0 to 100.
-      If answers are partially correct, add 10 to 25% to the total accuracy instead of removing all credit.
-      If user answer has the same meaning as the correct answer give full credit. (Add the full 50% to the accuracy)
-      "open ended question"{
-        "questionText": ${quiz.openEndedQuestion.questionText},
-        "correctAnswer": ${quiz.openEndedQuestion.correctAnswer},
-        "userAnswer": ${quiz.openEndedQuestion.userAnswer}
-      }
-      "fill in the blank question"{
-        "questionText": ${quiz.fillInTheBlankQuestion.questionText},
-        "userAnswer": ${quiz.fillInTheBlankQuestion.userAnswer},
-        "correctAnswer": ${quiz.fillInTheBlankQuestion.correctAnswer},
-      }
-    ''';
+    // MC: 9 points each (3 * 9= 27 points total)
+    // OE: 14 points each (2*14 = 28 points total)
+    // TF: 8 points each (3*8 = 24 points total).
+    // FB: 7 points each (3 * 7= 21 points total).
+    // 27 + 28 + 24 + 21 = 100.
 
+    int trueFalseMcqScore = 0;
+    for(var question in quiz.mcQuestions){
+      if(question.userAnswer == question.correctAnswer){
+        trueFalseMcqScore += 9;
+      }
+    }
+    for(var question in quiz.tfQuestions){
+      if(question.userAnswer == question.correctAnswer){
+        trueFalseMcqScore += 8;
+      }
+    }
+    print(" TFMCQ SCORE : $trueFalseMcqScore");
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
+
+    String prompt = '''
+    Correct the following quiz questions. 
+    Each open ended question is worth 14 points and each fill in the blank is worth 7 points. 
+    Since there are 2 open ended questions and 3 fill in the blank questions the total possible score must be 49.
+    If answer is partially correct or close but not correct give some points instead of removing all points.\n\n
+    ''';
+    for(var oequestion in quiz.openEndedQuestions){
+      prompt += "Open ended questions:";
+      prompt += "Question ID: ${oequestion.id}\n";
+      prompt += "Question: ${oequestion.questionText}\n";
+      prompt += "Correct Answer: ${oequestion.correctAnswer}\n";
+      prompt += "User Answer: ${oequestion.userAnswer}\n\n";
+    }
+    for(var fbquestion in quiz.fillInTheBlankQuestions){
+      prompt += " \n\n\nFill in the blank questions:";
+      prompt += "Question ID: ${fbquestion.id}\n";
+      prompt += "Question: ${fbquestion.questionText}\n";
+      prompt += "Correct Answer: ${fbquestion.correctAnswer}\n";
+      prompt += "User Answer: ${fbquestion.userAnswer}\n\n";
+    }
     final model = GenerativeModel(
       model: 'gemini-2.0-flash',
       apiKey: apiKey!,
@@ -97,11 +138,35 @@ class _QuizWidgetState extends State<QuizWidget> {
 
       if(response.text != null){
         Map<String,dynamic> jsonResponse = jsonDecode(response.text!);
-        
+        int apiScore = jsonResponse["quiz_score"] as int;
+         print(" API SCORE : $apiScore");
         setState(() {
-          _quizScore = accuracy + (jsonResponse["accuracy_score"]/2).toInt() as int;
-          _openEndedSuggestion = jsonResponse["open_ended_suggestions"];
-          _fillInTheBlankSuggestion = jsonResponse["fill_in_the_blank_suggestion"];
+          _quizScore = trueFalseMcqScore + apiScore;
+           print(" TOTAL SCORE : $trueFalseMcqScore + $apiScore = $_quizScore");
+          // Process open-ended suggestions
+          if (jsonResponse.containsKey('open_ended_suggestions') && 
+          jsonResponse['open_ended_suggestions'] is List) {
+            for (var suggestionItem in jsonResponse['open_ended_suggestions']) {
+              if (suggestionItem is Map<String, dynamic> &&
+                  suggestionItem.containsKey('questionId') &&
+                  suggestionItem.containsKey('suggestion')) {
+                suggestions[suggestionItem['questionId']] = suggestionItem['suggestion'];
+              }
+            }
+          }
+
+          // Process fill-in-the-blank suggestions
+          if (jsonResponse.containsKey('fill_in_the_blank_suggestions') && 
+          jsonResponse['fill_in_the_blank_suggestions'] is List) {
+            for (var suggestionItem
+                in jsonResponse['fill_in_the_blank_suggestions']) {
+              if (suggestionItem is Map<String, dynamic> &&
+                  suggestionItem.containsKey('questionId') &&
+                  suggestionItem.containsKey('suggestion')) {
+                suggestions[suggestionItem['questionId']] = suggestionItem['suggestion'];
+              }
+            }
+          }
         });
       }else{
         throw Exception("Gemini API returned a null response");
@@ -120,21 +185,29 @@ class _QuizWidgetState extends State<QuizWidget> {
           _isLoading = true;
         });
         _timer?.cancel();
-        Quiz submittedQuiz = widget.quiz;
-        submittedQuiz.mcQuestion.userAnswer = _selectedMcqOption;
-        submittedQuiz.tfQuestion.userAnswer = _selectedTrueOrFalseAnswer;
-        submittedQuiz.fillInTheBlankQuestion.userAnswer = _fillInTheBlankAnswer.text;
-        submittedQuiz.openEndedQuestion.userAnswer = _openEndedAnswer.text;
 
-        await _correctQuiz(submittedQuiz);
-        
-        if(_quizScore != null){
-          submittedQuiz.accuracy = _quizScore;
+        for (MCQuestion question in widget.quiz.mcQuestions) {
+          question.userAnswer = userAnswers[question.id];
+        }
+        for (TFQuestion question in widget.quiz.tfQuestions) {
+          question.userAnswer = userAnswers[question.id];
+        }
+        for (OpenEndedQuestion question in widget.quiz.openEndedQuestions) {
+          question.userAnswer = userAnswers[question.id];
+        }
+        for (FillInTheBlankQuestion question in widget.quiz.fillInTheBlankQuestions) {
+          question.userAnswer = userAnswers[question.id];
         }
 
-        submittedQuiz.timeTaken = _getTimeTakenInMinutes();
+        await _correctQuiz(widget.quiz);
+        
+        if(_quizScore != null){
+          widget.quiz.score = _quizScore;
+        }
 
-        await FirestoreService().saveQuiz(submittedQuiz);
+        widget.quiz.timeTaken = _getTimeTakenInMinutes();
+
+        await FirestoreService().saveQuiz(widget.quiz);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Quiz Saved. You can view it in "My Quizzes" page.'))
         );
@@ -155,61 +228,113 @@ class _QuizWidgetState extends State<QuizWidget> {
     }
   }
 
+  Widget _buildQuestionWidget(dynamic question) {
 
-    // --- Helper Method for MCQ Radio Buttons ---
-  Widget _buildMcqOption(String option) {
-    Color? tileColor;
-    if (_isSubmitted) {
-      if (option == widget.quiz.mcQuestion.correctAnswer) {
-        tileColor = Colors.green[100]; // Light green for correct answer
-      } else if (option == _selectedMcqOption &&
-          option != widget.quiz.mcQuestion.correctAnswer) {
-        tileColor = Colors.red[100]; // Light red for incorrect selection
-      }
-    }
-
-    return RadioListTile<String>(
-      title: Text(option),
-      value: option,
-      groupValue: _selectedMcqOption,
-      onChanged: _isSubmitted
-          ? null
-          : (value) {
-              // Disable changes after submission
-              setState(() {
-                _selectedMcqOption = value!;
-              });
-            },
-      tileColor: tileColor, // Apply the determined color
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          question.questionText,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+        ),
+        const SizedBox(height: 12),
+        _buildQuestionInputWidget(question), 
+        if (_isSubmitted && suggestions.containsKey(question.id)) ...[
+          const SizedBox(height: 8),
+          Text(
+            suggestions[question.id]!,
+            style: const TextStyle(color: Colors.green),
+          ),
+        ],
+        const SizedBox(height: 40),
+      ],
     );
   }
 
-// --- Helper Method for True/False Radio Buttons ---
-  Widget _buildTrueFalseOption(bool value) {
-    Color? tileColor;
-    if (_isSubmitted) {
-      if (value == widget.quiz.tfQuestion.correctAnswer) {
-        tileColor = Colors.green[100];
-      } else if (value == _selectedTrueOrFalseAnswer &&
-          value != widget.quiz.tfQuestion.correctAnswer) {
-        tileColor = Colors.red[100];
-      }
-    }
-
-    return RadioListTile<bool>(
-      title: Text(value ? 'True' : 'False'),
-      value: value,
-      groupValue: _selectedTrueOrFalseAnswer,
-      onChanged: _isSubmitted
-          ? null
-          : (value) {
+  Widget _buildQuestionInputWidget(dynamic question) {
+    if (question is MCQuestion) {
+      return Column(
+        children: question.options.map((option) {
+          Color? tileColor;
+          if (_isSubmitted) {
+            if (option == question.correctAnswer) {
+              tileColor = Colors.green[100];
+            } else if (option == userAnswers[question.id] &&
+                option != question.correctAnswer) {
+              tileColor = Colors.red[100];
+            }
+          }
+          return RadioListTile<String>(
+            title: Text(option),
+            value: option,
+            groupValue: userAnswers[question.id],
+            onChanged: _isSubmitted
+                ? null
+                : (value) {
               setState(() {
-                _selectedTrueOrFalseAnswer = value!;
+                userAnswers[question.id] = value!;
               });
             },
-      tileColor: tileColor,
-    );
+            tileColor: tileColor,
+          );
+        }).toList(),
+      );
+    } else if (question is TFQuestion) {
+      return Column(
+        children: [true, false].map((value) {
+          Color? tileColor;
+          if (_isSubmitted) {
+            if (value == question.correctAnswer) {
+              tileColor = Colors.green[100];
+            } else if (value == userAnswers[question.id] &&
+                value != question.correctAnswer) {
+              tileColor = Colors.red[100];
+            }
+          }
+          return RadioListTile<bool>(
+            title: Text(value ? 'True' : 'False'),
+            value: value,
+            groupValue: userAnswers[question.id],
+            onChanged: _isSubmitted
+                ? null
+                : (value) {
+              setState(() {
+                userAnswers[question.id] = value!;
+              });
+            },
+            tileColor: tileColor,
+          );
+        }).toList(),
+      );
+    } else if (question is OpenEndedQuestion || question is FillInTheBlankQuestion) {
+      return TextFormField(
+        controller: textControllers[question.id],
+        decoration: InputDecoration(
+          labelText: 'Your Answer',
+          border: const OutlineInputBorder(
+            borderSide: BorderSide(),
+          ),
+          enabled: !_isSubmitted, // Disable after submission
+        ),
+        maxLines: question is OpenEndedQuestion ? 5 : 1,
+        keyboardType: question is OpenEndedQuestion ? TextInputType.multiline : TextInputType.text,
+        validator: (value) {
+          if (!_isSubmitted && (value == null || value.isEmpty)) {
+            return 'Please answer the question';
+          }
+          return null;
+        },
+        onChanged: (value) {
+          if (!_isSubmitted) {
+            userAnswers[question.id] = value;
+          }
+        },
+      );
+    } else {
+      return const Text('Unknown question type');
+    }
   }
+
   
   @override
   Widget build(BuildContext context) {
@@ -223,78 +348,18 @@ class _QuizWidgetState extends State<QuizWidget> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.quiz.mcQuestion.questionText,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400)
-                ),
-                const SizedBox(height: 12,),
-
-                for (var option in widget.quiz.mcQuestion.options)
-                _buildMcqOption(option),
-
-                const SizedBox(height: 40,),
-                Text(widget.quiz.openEndedQuestion.questionText,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400)
-                ),
-                const SizedBox(height: 12,),
-                SizedBox( 
-                  height: 100, 
-                  child: TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Your Answer',
-                      border: OutlineInputBorder( 
-                        borderSide: BorderSide(), 
-                      ),
-                    ),
-                    controller: _openEndedAnswer,
-                    maxLines: null, 
-                    expands: true,  
-                    validator: (value){
-                      if(value == null || value.isEmpty){
-                        return  "Please answer the question";
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                if(_isSubmitted)
-                ...[
-                  const SizedBox(height: 20,),
-                  Text(_openEndedSuggestion!, style: const TextStyle(fontSize: 15, color: Colors.green),)
-                ],
-
-                const SizedBox(height: 40,),
-                Text(widget.quiz.tfQuestion.questionText,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400)
-                ),
-
-                const SizedBox(height: 12),
-                _buildTrueFalseOption(true),
-                _buildTrueFalseOption(false),
-
-                const SizedBox(height: 40,),
-                Text(widget.quiz.fillInTheBlankQuestion.questionText,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400)
-                ),
-                TextFormField( 
-                decoration: const InputDecoration(
-                  labelText: 'Your Answer',
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide(), 
-                  ),
-                ),
-                validator: (value){
-                  if(value == null || value.isEmpty){
-                    return  "Please answer the question";
-                  }
-                  return null;
-                },
-                controller: _fillInTheBlankAnswer,
-              ),
-              if(_isSubmitted)
-              ...[
-                const SizedBox(height: 20,),
-                Text(_fillInTheBlankSuggestion!, style: const TextStyle(fontSize: 15, color: Colors.green),)
-              ],
+              const Text("1. Multiple Choice Questions", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),),
+              const SizedBox(height: 10,),
+              ...widget.quiz.mcQuestions.map(_buildQuestionWidget),
+              const Text("2. True or False Questions", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),),
+              const SizedBox(height: 10,),
+              ...widget.quiz.tfQuestions.map(_buildQuestionWidget),
+              const Text("3. Open Ended Questions", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),),
+              const SizedBox(height: 10,),
+              ...widget.quiz.openEndedQuestions.map(_buildQuestionWidget),
+              const Text("4. Fill in the Blank Questions", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),),
+              const SizedBox(height: 10,),
+              ...widget.quiz.fillInTheBlankQuestions.map(_buildQuestionWidget),
               const SizedBox(height: 60,),
               _isLoading?
               const Center(child: CircularProgressIndicator())
