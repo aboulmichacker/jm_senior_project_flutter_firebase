@@ -1,13 +1,16 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:jm_senior/Pages/existing_quizzes_page.dart';
 import 'package:jm_senior/Pages/my_quizzes_page.dart';
 import 'package:jm_senior/assets/schemas.dart';
 import 'package:jm_senior/components/quiz_widget.dart';
 import 'package:jm_senior/components/subject_topic_picker.dart';
 import 'package:jm_senior/models/quiz_model.dart';
+import 'package:jm_senior/sample_data.dart';
+import 'package:jm_senior/services/firestore_service.dart';
+
 class QuizMePage extends StatefulWidget {
   const QuizMePage({super.key});
 
@@ -20,92 +23,8 @@ class _QuizMePageState extends State<QuizMePage> {
   String? _selectedSubject;
   String? _selectedTopic;
   bool _isLoading = false;
-  Quiz? quiz = Quiz.fromJson(
-    {
-  "mcQuestions": [
-      {
-        "id": "mc1",
-        "questionText": "Solve for x:  2x + 5 = 11",
-        "options": [
-          "2",
-          "3",
-          "4",
-          "6"
-        ],
-        "correctAnswer": "3"
-      },
-      {
-        "id": "mc2",
-        "questionText": "Simplify the expression: 3(y - 4) + 2y",
-        "options": [
-          "5y - 12",
-          "5y - 4",
-          "y - 12",
-          "3y - 12"
-        ],
-        "correctAnswer": "5y - 12"
-      },
-      {
-        "id": "mc3",
-        "questionText": "If a shirt costs USD 20 and is on sale for 25% off, what is the sale price?",
-        "options": [
-          "USD 5",
-          "USD 15",
-          "USD 10",
-          "USD 25"
-        ],
-        "correctAnswer": "USD 15"
-      }
-    ],
-    "openEndedQuestions": [
-      {
-        "id": "oe1",
-        "questionText": "Solve for x:  (x/4) - 7 = 2",
-        "correctAnswer": "36"
-      },
-      {
-        "id": "oe2",
-        "questionText": "A rectangle has a length of (x + 5) cm and a width of 3 cm.  If the area of the rectangle is 24 cm², what is the value of x?",
-        "correctAnswer": "3"
-      }
-    ],
-    "tfQuestions": [
-      {
-        "id": "tf1",
-        "questionText": "The expression 5x + 2x - 3x is equivalent to 4x.",
-        "correctAnswer": true
-      },
-      {
-        "id": "tf2",
-        "questionText": "If 2y = 10, then y = 20.",
-        "correctAnswer": false
-      },
-      {
-        "id": "tf3",
-        "questionText": "In the equation y = mx + b, 'b' represents the slope of the line.",
-        "correctAnswer": false
-      }
-    ],
-    "fillInTheBlankQuestions": [
-      {
-        "id": "fb1",
-        "questionText": "Simplify: 12a - 5a + 2a = ____a",
-        "correctAnswer": "9"
-      },
-      {
-        "id": "fb2",
-        "questionText": "If x + 7 = 15, then x = ____.",
-        "correctAnswer": "8"
-      },
-      {
-        "id": "fb3",
-        "questionText": "The solution to the equation 3n = 21 is n = _____.",
-        "correctAnswer": "7"
-      }
-    ]
-  }
+  Quiz? quiz = SampleData().sampleQuiz; //FOR TESTING PURPOSES ONLY. TO BE REMOVED LATER.
 
-  );
   @override
   void initState(){
     super.initState();
@@ -114,6 +33,7 @@ class _QuizMePageState extends State<QuizMePage> {
     }
   }
 //FOR TESTING PURPOSES ONLY. TO BE REMOVED LATER.
+
   Future<void> _generateQuiz() async {
     if(_formKey.currentState!.validate()){
       final apiKey = dotenv.env['GEMINI_API_KEY'];
@@ -136,9 +56,11 @@ class _QuizMePageState extends State<QuizMePage> {
               quiz = Quiz.fromJson(jsonDecode(response.text!));
               quiz?.topic = _selectedTopic;
             });
+            if(quiz != null){
+              await FirestoreService().saveGeneratedQuiz(quiz!);
+            }
         } else {
           // Handle the case where response.text is null
-          
           // Show an error message to the user, or perhaps retry the request.
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Error generating quiz. Please try again.'), backgroundColor: Colors.red),
@@ -154,6 +76,49 @@ class _QuizMePageState extends State<QuizMePage> {
     }
   }
 
+  void _selectExistingQuiz(Quiz selectedQuiz) {
+    if(mounted){
+      setState(() {
+        quiz = selectedQuiz;
+      });
+    }
+  }
+
+  Future<void> _navigateToExistingQuizzes(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
+    List<Quiz> quizzes = await FirestoreService().getGeneratedQuizzes(_selectedTopic!);
+
+    if (quizzes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No quizzes found.'),
+        ),
+      );
+      return;
+    }
+
+    Quiz? selectedQuiz = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExistingQuizzesPage(
+          selectedTopic: _selectedTopic!,
+          quizzes: quizzes,
+          onQuizSelected: _selectExistingQuiz, // Pass the callback
+        ),
+      ),
+    );
+
+    //Check if a quiz was selected before updating the state.
+    if (selectedQuiz != null) {
+        _selectExistingQuiz(selectedQuiz); // redundant but to make it clearer
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
+  
   void _resetQuiz(){
     setState(() {
       quiz = null;
@@ -208,29 +173,49 @@ class _QuizMePageState extends State<QuizMePage> {
               const SizedBox(height: 20),
               _isLoading
               ? const CircularProgressIndicator()
-              : ElevatedButton.icon(
-                  onPressed: _isLoading ? null : (){
-                    try{
-                      _generateQuiz();
-                    }catch(e){
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(e.toString().replaceFirst('Exception: ', '')),
-                          backgroundColor: Colors.red,
-                        )
-                      );
+              : Column(
+                children: [
+                  ElevatedButton.icon(
+                      onPressed: _isLoading ? null : (){
+                        try{
+                          _generateQuiz();
+                        }catch(e){
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(e.toString().replaceFirst('Exception: ', '')),
+                              backgroundColor: Colors.red,
+                            )
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        textStyle: const TextStyle(fontSize: 18),
+                      ),
+                      icon: const Icon(Icons.auto_awesome, color: Colors.white,),
+                      label: const Text('Generate Quiz', style: TextStyle(color: Colors.white)),
+                    ),
+                const SizedBox(height:20),
+                const Center(child: Text("OR")),
+                const SizedBox(height:20),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    if(_formKey.currentState!.validate()){
+                      _navigateToExistingQuizzes(context);
                     }
                   },
+                  icon: const Icon(Icons.list, color: Colors.white),
+                  label: const Text('Browse Existing Quizzes', style: TextStyle(color: Colors.white),),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    textStyle: const TextStyle(fontSize: 18),
+                    backgroundColor: Colors.grey,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   ),
-                  icon: const Icon(Icons.auto_awesome, color: Colors.white,),
-                  label: const Text('Generate Quiz', style: TextStyle(color: Colors.white)),
                 ),
+                ],
+              ),
               ],
             ),
         ),

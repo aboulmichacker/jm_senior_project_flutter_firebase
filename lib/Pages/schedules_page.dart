@@ -118,8 +118,8 @@ class _ScheduleState extends State<Schedule> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.yellow.shade700,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
       ),
       floatingActionButton: Visibility(
         visible: currentExam !=  null,
@@ -214,7 +214,6 @@ class _ScheduleState extends State<Schedule> {
                           }
                         },
                         firstDayOfWeek: 1,
-                        todayHighlightColor: Colors.yellow.shade700,
                       );
                     }),
               ),

@@ -152,6 +152,8 @@ class FirestoreService {
   }
 
   //QUIZZES
+
+  //user quizzes
   Future<void> saveQuiz(Quiz quiz) async {
     try {
       if (currentUser != null) {
@@ -180,39 +182,64 @@ class FirestoreService {
               .map((doc) => Quiz.fromFirestore(doc.id, doc.data()))
             .toList());
   }
-
-  //QUIZ RESULTS DATA
-  Future<List<Map<String, dynamic>>> getQuizResultsData(
-    List<String> topics) async {
-  List<Map<String, dynamic>> results = [];
-
-  for (String topic in topics) {
+  //generated quizzes
+  Future<void> saveGeneratedQuiz(Quiz quiz) async {
     try {
-      QuerySnapshot querySnapshot = await _db
-          .collection('quizzes') 
-          .where('userId', isEqualTo: currentUser!.uid)
-          .where('topic', isEqualTo: topic)
-          .orderBy('timestamp', descending: true) // Order by timestamp
-          .limit(1) // Get only the latest
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        DocumentSnapshot doc = querySnapshot.docs.first;
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-        // Extract only the required fields
-        results.add({
-          'topic': data['topic'],
-          'quiz_score': data['score']*0.01,
-          'quiz_time_taken': data['timeTaken'],
-        });
+      if (currentUser != null) {
+        await _db.collection('generatedQuizzes')
+                    .add(quiz.toJson());
       }
     } catch (e) {
       rethrow;
     }
   }
-  return results;
-}
+
+  Future<List<Quiz>> getGeneratedQuizzes(String topic) async {
+    try{
+      List<Quiz> generatedQuizzes = [];
+      final quizzesSnapshot = await _db.collection('generatedQuizzes')
+                                          .where('topic', isEqualTo: topic).get();
+      for(DocumentSnapshot doc in quizzesSnapshot.docs){
+        Quiz quiz = Quiz.fromJson( doc.data() as Map<String,dynamic>);
+        generatedQuizzes.add(quiz);
+      }
+      return generatedQuizzes;
+    }catch(e){
+      rethrow;
+    }
+  }
+
+  //QUIZ RESULTS DATA
+  Future<List<Map<String, dynamic>>> getQuizResultsData(List<String> topics) async {
+    List<Map<String, dynamic>> results = [];
+    for (String topic in topics) {
+      try {
+        QuerySnapshot querySnapshot = await _db
+            .collection('quizzes') 
+            .where('userId', isEqualTo: currentUser!.uid)
+            .where('topic', isEqualTo: topic)
+            .orderBy('timestamp', descending: true) // Order by timestamp
+            .limit(1) // Get only the latest
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentSnapshot doc = querySnapshot.docs.first;
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+          // Extract only the required fields
+          results.add({
+            'topic': data['topic'],
+            'quiz_score': data['score'],
+            'quiz_time_taken': data['timeTaken'],
+          });
+        }
+      } catch (e) {
+        rethrow;
+      }
+    }
+    return results;
+  }
+  
 }
 
 

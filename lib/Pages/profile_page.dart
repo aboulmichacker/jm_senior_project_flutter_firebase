@@ -159,14 +159,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           await AuthService().signout();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.yellow.shade700,
                         padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
                         textStyle: const TextStyle(fontSize: 18),
                       ),
-                      child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                      child: const Text('Sign Out'),
                     ),
                   ),
                 ],),

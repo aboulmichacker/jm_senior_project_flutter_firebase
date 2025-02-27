@@ -62,8 +62,18 @@ class Quiz{
     );
   }
   
+  Map<String, dynamic> toJson() {
+    return {
+      'topic': topic,
+      'mcQuestions': mcQuestions.map((q) => q.toJson()).toList(),
+      'tfQuestions': tfQuestions.map((q) => q.toJson()).toList(),
+      'openEndedQuestions': openEndedQuestions.map((q) => q.toJson()).toList(),
+      'fillInTheBlankQuestions': fillInTheBlankQuestions.map((q) => q.toJson()).toList(),
+    };
+  }
   factory Quiz.fromJson(Map<String, dynamic> json){
     return Quiz(
+      topic: json['topic'] as String?,
       mcQuestions: (json['mcQuestions'] as List<dynamic>)
           .map((item) => MCQuestion.fromJson(item as Map<String, dynamic>))
           .toList(),
@@ -98,7 +108,7 @@ class QuizQuestion{
       'id': id,
       'questionText': questionText,
       'correctAnswer': correctAnswer,
-      'userAnswer': userAnswer
+      if(userAnswer != null) 'userAnswer': userAnswer
     };
   }
 }

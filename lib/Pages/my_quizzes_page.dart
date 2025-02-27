@@ -111,7 +111,7 @@ class _QuizListItemState extends State<QuizListItem> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(
-                child: Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Text("Score"),

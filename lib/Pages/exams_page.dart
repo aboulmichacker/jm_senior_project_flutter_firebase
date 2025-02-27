@@ -150,7 +150,7 @@ class _ExamsPageState extends State<ExamsPage> {
                                     GenerateSchedule().generateSchedule(exam, quizResults, context);
                                   }
                                 },
-                                icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white,),
+                                icon: const Icon(Icons.auto_awesome_rounded),
                                 label: exam.hasSchedule ? const Text("Update Schedule") :const Text("Generate Study Schedule"),
                               ),
                           ),
