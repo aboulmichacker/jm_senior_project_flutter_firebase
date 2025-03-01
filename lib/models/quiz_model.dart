@@ -131,7 +131,7 @@ class MCQuestion extends QuizQuestion{
       'questionText': questionText,
       'options': options,
       'correctAnswer': correctAnswer,
-      'userAnswer': userAnswer
+      if(userAnswer != null) 'userAnswer': userAnswer
     };
   }
   factory MCQuestion.fromJson(Map<String, dynamic> json) {

@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+//A study schedule slot can also be used as a constraint called an event where a student has a specific
+//time slot where he cannot study so that the scheduling algorithm will generate him a schedule based on these constraints.
+//for reusability purposes examID can be nullable and the topic can be the event's name
 class StudySchedule {
   String? id;
   String? userId;
-  String examId;
+  String? examId;
   DateTime startTime;
   DateTime endTime;
   String topic;
@@ -12,7 +14,7 @@ class StudySchedule {
   StudySchedule({
     this.id,
     this.userId,
-    required this.examId,
+    this.examId,
     required this.startTime,
     required this.endTime,
     required this.topic,
@@ -23,7 +25,7 @@ class StudySchedule {
     return StudySchedule(
       id: documentId,
       userId: data['userId'] as String,
-      examId: data['examId'] as String,
+      examId: data['examId'] as String?,
       startTime: (data['startTime'] as Timestamp).toDate(),
       endTime: (data['endTime'] as Timestamp).toDate(),
       topic: data['topic'] as String

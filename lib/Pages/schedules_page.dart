@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:jm_senior/components/event_form.dart';
+import 'package:jm_senior/components/event_info.dart';
 import 'package:jm_senior/components/schedule_form.dart';
 import 'package:jm_senior/components/study_schedule_info.dart';
 import 'package:jm_senior/models/exam_model.dart';
@@ -45,19 +47,23 @@ class _ScheduleState extends State<Schedule> {
   List<Appointment> _mapSchedulesToAppointments(
       List<StudySchedule> schedules, List<Exam> exams) {
     return schedules.map((schedule) {
-      Exam scheduleExam =
-          exams.firstWhere((exam) => exam.id == schedule.examId);
+      String subject = '';
+      if(schedule.examId != null){
+        Exam scheduleExam =
+            exams.firstWhere((exam) => exam.id == schedule.examId);
+        subject = scheduleExam.subject;
+      }
       return Appointment(
         id: schedule.id,
         subject: schedule.topic,
         startTime: schedule.startTime,
         endTime: schedule.endTime,
-        color: _getColor(scheduleExam.subject),
+        color: _getColor(subject),
       );
     }).toList();
   }
 
-  Color _getColor(String subject) {
+  Color _getColor(String? subject) {
     switch (subject) {
       case 'Math':
         return Colors.green;
@@ -81,6 +87,16 @@ class _ScheduleState extends State<Schedule> {
         });
   }
 
+  void _addEvent(){
+        showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return EventForm(
+            selectedTime: selectedTime!,
+          );
+        });
+  }
+
   Future<void> _deleteSchedule(StudySchedule schedule, Color snackbarColor) async {
     final backupData = StudySchedule(
         examId: schedule.examId,
@@ -91,7 +107,7 @@ class _ScheduleState extends State<Schedule> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Study ${schedule.topic} deleted'),
+        content: Text(snackbarColor != Colors.black ? "Study ${schedule.topic} deleted" : "Event Deleted"),
         duration: const Duration(seconds: 5),
         backgroundColor: snackbarColor,
         action: SnackBarAction(
@@ -101,11 +117,11 @@ class _ScheduleState extends State<Schedule> {
             try {
               await FirestoreService().addstudySchedule(backupData);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Schedule restored')),
+                SnackBar(content: Text('${snackbarColor != Colors.black ? 'Study Session': 'Event'} restored')),
               );
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error restoring schedule: $e')),
+                SnackBar(content: Text('Error restoring: $e')),
               );
             }
           },
@@ -121,19 +137,20 @@ class _ScheduleState extends State<Schedule> {
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
       ),
-      floatingActionButton: Visibility(
-        visible: currentExam !=  null,
-        child: FloatingActionButton(
-          onPressed: () {
-            if (selectedTime != null) {
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (selectedTime != null) {
+            if(currentExam != null){
               _addSchedule();
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Tap on the calendar to select a date')));
+            }else{
+              _addEvent();
             }
-          },
-          child: const Icon(Icons.add),
-        ),
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Tap on the calendar to select a date')));
+          }
+        },
+        child: const Icon(Icons.add),
       ),
       body: 
       _examsLoaded ?
@@ -201,16 +218,25 @@ class _ScheduleState extends State<Schedule> {
                             _setTime(details);
                           } else if (details.targetElement == CalendarElement.appointment) {
                             Appointment tappedAppointment = details.appointments!.first;
-                            StudySchedule selectedSchedule = filteredSchedules.firstWhere((schedule) => schedule.id == tappedAppointment.id);
-                            Exam selectedExam = exams.firstWhere((exam) => exam.id == selectedSchedule.examId);
-                            //get the corresponding exam for selected schedule to display as info
-                            showScheduleInfo(
-                              context, 
-                              selectedSchedule, 
-                              selectedExam,
-                              tappedAppointment.color, 
-                              _deleteSchedule
-                            );
+                            StudySchedule selectedSchedule = 
+                            filteredSchedules.firstWhere((schedule) => schedule.id == tappedAppointment.id);
+                            if(selectedSchedule.examId != null){
+                              Exam selectedExam = exams.firstWhere((exam) => exam.id == selectedSchedule.examId);
+                              //get the corresponding exam for selected schedule to display as info
+                              showScheduleInfo(
+                                context, 
+                                selectedSchedule, 
+                                selectedExam,
+                                tappedAppointment.color, 
+                                _deleteSchedule
+                              );
+                            }else{
+                              showEventInfo(
+                                context, 
+                                selectedSchedule, 
+                                _deleteSchedule
+                              );
+                            }
                           }
                         },
                         firstDayOfWeek: 1,

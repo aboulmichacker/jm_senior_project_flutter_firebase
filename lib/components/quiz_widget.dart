@@ -109,8 +109,9 @@ class _QuizWidgetState extends State<QuizWidget> {
     String prompt = '''
     Correct the following quiz questions. 
     Each open ended question is worth 14 points and each fill in the blank is worth 7 points. 
-    Since there are 2 open ended questions and 3 fill in the blank questions the total possible score must be 49.
-    If answer is partially correct or close but not correct give some points instead of removing all points.\n\n
+    Since there are 2 open ended questions and 3 fill in the blank questions the maximum possible score must be 49.
+    If an open ended question is partially correct but lacks details give half the grade (7 points) instead of all 14 points.
+    For fill in the blanks if the word is not the same as the correct answer remove all points. Ignore case sensitivity.\n\n
     ''';
     for(var oequestion in quiz.openEndedQuestions){
       prompt += "Open ended questions:";
