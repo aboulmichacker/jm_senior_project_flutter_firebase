@@ -73,24 +73,56 @@ class GenerateSchedule {
   Future<List<Map<String, DateTime>>> _getAvailableTimeSlots({
     required TimeOfDay studyStartTime,
     required TimeOfDay studyEndTime,
+    required TimeOfDay weekendStartTime,
+    required TimeOfDay weekendEndTime,
     required DateTime examDate,
     required int studyBreak
   }) async {
     
   List<Map<String, DateTime>> availableTimeSlots = [];
-  DateTime dayIterator = DateTime.now().copyWith(
-      hour: studyStartTime.hour,
-      minute: studyStartTime.minute,
-      second: 0,
-      millisecond: 0
-  );
+  DateTime dayIterator;
+  //Initialize day Iterator
+  if(DateTime.now().weekday == 6 || DateTime.now().weekday == 7){
+     dayIterator = DateTime.now().copyWith(
+        hour: weekendStartTime.hour,
+        minute: weekendEndTime.minute,
+        second: 0,
+        millisecond: 0
+    );
+  }else{
+    dayIterator = DateTime.now().copyWith(
+        hour: studyStartTime.hour,
+        minute: studyStartTime.minute,
+        second: 0,
+        millisecond: 0
+    );
+  }
 
   // Fetch existing schedules.
   List<StudySchedule> existingSchedules = await FirestoreService().getSchedulesList();
 
     while (dayIterator.isBefore(examDate) || dayIterator.isAtSameMomentAs(examDate)) {
-      DateTime startOfDay = dayIterator;
-      DateTime endOfDay = DateTime(dayIterator.year, dayIterator.month, dayIterator.day, studyEndTime.hour, studyEndTime.minute);
+      DateTime startOfDay;
+      DateTime endOfDay;
+      if(dayIterator.weekday == 6 || dayIterator.weekday == 7){
+        startOfDay = dayIterator.copyWith(
+          hour: weekendStartTime.hour,
+          minute: weekendStartTime.minute
+        );
+        endOfDay = dayIterator.copyWith(
+          hour: weekendEndTime.hour,
+          minute: weekendEndTime.minute,
+        );
+      }else{
+       startOfDay = dayIterator.copyWith(
+          hour: studyStartTime.hour,
+          minute: studyStartTime.minute
+        );
+        endOfDay = dayIterator.copyWith(
+          hour: studyEndTime.hour,
+          minute: studyEndTime.minute,
+        );
+      }
 
       if (startOfDay.isBefore(endOfDay)) {
         availableTimeSlots.add({"start": startOfDay, "end": endOfDay});
@@ -154,6 +186,8 @@ class GenerateSchedule {
     required Exam exam,
     required TimeOfDay studyStartTime,
     required TimeOfDay studyEndTime,
+    required TimeOfDay weekendStartTime,
+    required TimeOfDay weekendEndTime,
     required int studyBreak,
     required int sessionLength
   }) async {
@@ -163,7 +197,9 @@ class GenerateSchedule {
     
     List<Map<String,DateTime>> availableTimeSlots = await _getAvailableTimeSlots(
       studyStartTime: studyStartTime,
-      studyEndTime: studyEndTime, 
+      studyEndTime: studyEndTime,
+      weekendStartTime: weekendStartTime,
+      weekendEndTime: weekendEndTime,
       examDate: examDate, 
       studyBreak: studyBreak
     );
@@ -250,6 +286,8 @@ class GenerateSchedule {
       final sessionDuration = prefs.getInt('studySessionDuration');
       final String studyStartTimeString = prefs.getString('studyStartTime') ?? '15:00';
       final String studyEndTimeString = prefs.getString('studyEndTime') ?? '23:00';
+      final String weekendStartTimeString = prefs.getString('weekendStartTime') ?? '15:00';
+      final String weekendEndTimeString = prefs.getString('weekendEndTime') ?? '23:00';
 
       if(exam.hasSchedule){ //crucial if we need to update an existing schedule
         await FirestoreService().deleteAllExamSchedules(exam.id!);
@@ -260,6 +298,8 @@ class GenerateSchedule {
         exam: exam, 
         studyStartTime: TimeStringConversion().stringToTimeOfDay(studyStartTimeString),
         studyEndTime: TimeStringConversion().stringToTimeOfDay(studyEndTimeString),
+        weekendStartTime: TimeStringConversion().stringToTimeOfDay(weekendStartTimeString),
+        weekendEndTime: TimeStringConversion().stringToTimeOfDay(weekendEndTimeString),
         studyBreak: breakDuration ?? 45,
         sessionLength: sessionDuration ?? 15
       );

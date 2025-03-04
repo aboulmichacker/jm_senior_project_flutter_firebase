@@ -240,6 +240,23 @@ class _ScheduleState extends State<Schedule> {
                           }
                         },
                         firstDayOfWeek: 1,
+                        allowDragAndDrop: true,
+                        onDragEnd: (appointmentDragEndDetails) {
+                          final draggedItem = appointmentDragEndDetails.appointment as Appointment;
+                          final updatedSchedule = filteredSchedules.firstWhere((element) => element.id == draggedItem.id);
+                          Duration diff = updatedSchedule.endTime.difference(updatedSchedule.startTime);
+                          draggedItem.startTime = appointmentDragEndDetails.droppingTime!;
+                          draggedItem.endTime = appointmentDragEndDetails.droppingTime!.add(diff);
+                          FirestoreService().updatestudySchedule(
+                            StudySchedule(
+                              id: updatedSchedule.id,
+                              startTime: draggedItem.startTime, 
+                              endTime: draggedItem.endTime,
+                              examId: updatedSchedule.examId,
+                              topic: updatedSchedule.topic
+                            )
+                          );
+                        },
                       );
                     }),
               ),

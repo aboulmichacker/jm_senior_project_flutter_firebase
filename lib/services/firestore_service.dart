@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:jm_senior/models/quiz_model.dart';
+import 'package:jm_senior/models/study_preferences_model.dart';
 import 'package:jm_senior/models/study_schedule_model.dart';
 import 'package:jm_senior/models/user_model.dart';
 import 'package:jm_senior/models/exam_model.dart';
@@ -141,14 +142,18 @@ class FirestoreService {
     return schedules;
   }
 
-  //USER SETTINGS
-  Future<void> savePreferences(UserModel user) async {
+  //STUDY PREFERENCES
+  Future<void> savePreferences(String userId, StudyPreferences preferences) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('studySessionDuration', user.studySessionDuration);
-    await prefs.setInt('breakDuration', user.breakDuration);
-    await prefs.setString('studyStartTime', user.studyStartTime);
-    await prefs.setString('studyEndTime', user.studyEndTime);
-    await _db.collection('users').doc(user.id).set(user.toFirestore(), SetOptions(merge: true));
+    await prefs.setInt('studySessionDuration', preferences.studySessionDuration);
+    await prefs.setInt('breakDuration', preferences.breakDuration);
+    await prefs.setString('studyStartTime', preferences.studyStartTime);
+    await prefs.setString('studyEndTime', preferences.studyEndTime);
+    await prefs.setString('weekendStartTime', preferences.weekendStartTime);
+    await prefs.setString('weekendEndTime', preferences.weekendEndTime);
+    await _db.collection('users').doc(userId).update({
+      'studyPreferences': preferences.toFirestore()
+    });
   }
 
   //QUIZZES

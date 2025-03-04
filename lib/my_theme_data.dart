@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 ThemeData myThemeData = ThemeData(
   colorSchemeSeed: Colors.green,
   brightness: Brightness.light,
-
+  fontFamily: "Quicksand",
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       backgroundColor: Colors.green,

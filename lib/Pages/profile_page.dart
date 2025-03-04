@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:jm_senior/auth/auth_service.dart';
+import 'package:jm_senior/models/study_preferences_model.dart';
 import 'package:jm_senior/models/user_model.dart';
 import 'package:jm_senior/services/firestore_service.dart';
 import 'package:jm_senior/services/time_string_conversion.dart';
@@ -47,30 +48,56 @@ class _ProfilePageState extends State<ProfilePage> {
         } else if (snapshot.hasData) {
 
           UserModel userData = snapshot.data!;
-          int studySessionDuration = userData.studySessionDuration;
-          int breakDuration = userData.breakDuration;
+          StudyPreferences studyPreferences = userData.studyPreferences;
+          int studySessionDuration = studyPreferences.studySessionDuration;
+          int breakDuration = studyPreferences.breakDuration;
 
           void selectStudyStartTime(BuildContext context) {
             showTimePicker(
               context: context,
-              initialTime: TimeStringConversion().stringToTimeOfDay(userData.studyStartTime),
+              initialTime: TimeStringConversion().stringToTimeOfDay(studyPreferences.studyStartTime),
             ).then((value) {
               if (value != null) {
                 setState(() {
-                  userData.studyStartTime = TimeStringConversion().timeOfDayToString(value);
+                  studyPreferences.studyStartTime = TimeStringConversion().timeOfDayToString(value);
+                });
+              }
+            });
+          }
+          void selectStudyEndTime(BuildContext context) {
+            showTimePicker(
+              context: context,
+              initialTime: TimeStringConversion().stringToTimeOfDay(studyPreferences.studyEndTime),
+            ).then((value) {
+              if (value != null) {
+                setState(() {
+                  studyPreferences.studyEndTime = TimeStringConversion().timeOfDayToString(value);
                 });
               }
             });
           }
 
-          void selectStudyEndTime(BuildContext context) {
+          void selectWeekendStartTime(BuildContext context) {
             showTimePicker(
               context: context,
-              initialTime: TimeStringConversion().stringToTimeOfDay(userData.studyEndTime),
+              initialTime: TimeStringConversion().stringToTimeOfDay(studyPreferences.weekendStartTime),
             ).then((value) {
               if (value != null) {
                 setState(() {
-                  userData.studyEndTime = TimeStringConversion().timeOfDayToString(value);
+                  studyPreferences.weekendStartTime = TimeStringConversion().timeOfDayToString(value);
+                });
+              }
+            });
+          }
+
+          void selectWeekendEndTime(BuildContext context) {
+            showTimePicker(
+              context: context,
+              initialTime: TimeStringConversion().stringToTimeOfDay(studyPreferences.weekendEndTime),
+            ).then((value) {
+              if (value != null) {
+                setState(() {
+                  studyPreferences.weekendEndTime = TimeStringConversion().timeOfDayToString(value);
                 });
               }
             });
@@ -98,7 +125,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     onChanged: (value) {
                       setState(() {
                         studySessionDuration = value.toInt();
-                        userData.studySessionDuration = studySessionDuration;
+                        studyPreferences.studySessionDuration = studySessionDuration;
                       });
                     },
                   ),
@@ -111,39 +138,63 @@ class _ProfilePageState extends State<ProfilePage> {
                     onChanged: (value) {
                       setState(() {
                         breakDuration = value.toInt();
-                        userData.breakDuration = breakDuration;
+                        studyPreferences.breakDuration = breakDuration;
                       });
                     },
                   ),
                   const SizedBox(height: 20),
+                  const Text('At what time do you start studying?'),
                   TextField(
                     readOnly: true,
                     decoration: const InputDecoration(
-                      labelText: 'At what time do you start studying?',
+                      labelText: 'Weekdays',
                       suffixIcon: Icon(Icons.access_time),
                     ),
                     onTap: () => selectStudyStartTime(context),
                     controller: TextEditingController(
-                      text: userData.studyStartTime,
+                      text: studyPreferences.studyStartTime,
+                    ),
+                  ),
+                     TextField(
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Weekends',
+                      suffixIcon: Icon(Icons.access_time),
+                    ),
+                    onTap: () => selectWeekendStartTime(context),
+                    controller: TextEditingController(
+                      text: studyPreferences.weekendStartTime,
                     ),
                   ),
                   const SizedBox(height: 20,),
+                  const Text('At what time do you finish studying?'),
                   TextField(
                     readOnly: true,
                     decoration: const InputDecoration(
-                      labelText: 'At what time do you finish studying?',
+                      labelText: 'Weekdays',
                       suffixIcon: Icon(Icons.access_time),
                     ),
                     onTap: () => selectStudyEndTime(context),
                     controller: TextEditingController(
-                      text: userData.studyEndTime,
+                      text: studyPreferences.studyEndTime,
+                    ),
+                  ),
+                  TextField(
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Weekends',
+                      suffixIcon: Icon(Icons.access_time),
+                    ),
+                    onTap: () => selectWeekendEndTime(context),
+                    controller: TextEditingController(
+                      text: studyPreferences.weekendEndTime,
                     ),
                   ),
                   const SizedBox(height: 20),
                   Center(
                     child: ElevatedButton(
                       onPressed: () async{
-                        await FirestoreService().savePreferences(userData);
+                        await FirestoreService().savePreferences(userData.id, studyPreferences);
                         ScaffoldMessenger.of(context).showSnackBar(
                          const SnackBar(content: Text('Settings saved successfully!')),
                         );
@@ -156,14 +207,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   Center(
                     child: ElevatedButton(
                       onPressed: () async {
-                          await AuthService().signout();
+                        await AuthService().signout();
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        textStyle: const TextStyle(fontSize: 18),
+                        textStyle: const TextStyle(fontSize: 18, fontFamily: "Quicksand"),
                       ),
                       child: const Text('Sign Out'),
                     ),

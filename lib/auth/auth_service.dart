@@ -2,6 +2,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:jm_senior/models/study_preferences_model.dart';
 import 'package:jm_senior/models/user_model.dart';
 import 'package:jm_senior/services/firestore_service.dart';
 class AuthService{
@@ -25,8 +26,11 @@ class AuthService{
       if (e.code == 'invalid-email' || e.code =='user-not-found') {
         throw Exception('No User found for that Email');
       } else if (e.code == 'invalid-credential') {
+        throw Exception('Username is incorrect');
+      }else if (e.code == 'wrong-password') {
         throw Exception('Wrong password provided for that user.');
-      }else{
+      }
+      else{
         throw Exception('Error logging in: $e');
       }
     }catch(e){
@@ -46,10 +50,13 @@ class AuthService{
           password: password
       );
 
+      StudyPreferences studyPreferences = StudyPreferences();
+
       UserModel user = UserModel(
         id: userCredential.user!.uid,
         username: username,
-        email: email
+        email: email,
+        studyPreferences: studyPreferences
       );
 
       await FirestoreService().addUser(user);

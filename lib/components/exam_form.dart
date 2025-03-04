@@ -160,6 +160,7 @@ class _ExamFormState extends State<ExamForm> {
                 ),
                 SubjectTopicPicker(
                   initialSubject: widget.exam?.subject,
+                  initialTopic: widget.exam?.topics[0],
                   onSubjectSelected: (subject){
                     _subject = subject;
                     setState(() {

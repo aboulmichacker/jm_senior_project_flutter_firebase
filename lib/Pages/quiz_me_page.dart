@@ -196,7 +196,7 @@ class _QuizMePageState extends State<QuizMePage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        textStyle: const TextStyle(fontSize: 18),
+                        textStyle: const TextStyle(fontSize: 18, fontFamily: "Quicksand"),
                       ),
                       icon: const Icon(Icons.auto_awesome, color: Colors.white,),
                       label: const Text('Generate Quiz', style: TextStyle(color: Colors.white)),

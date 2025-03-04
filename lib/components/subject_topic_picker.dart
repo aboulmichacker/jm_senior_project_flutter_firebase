@@ -4,10 +4,12 @@ class SubjectTopicPicker extends StatefulWidget {
   final Function(String?) onSubjectSelected;
   final Function(String?) onTopicSelected;
   final String? initialSubject;
+  final String? initialTopic;
   const SubjectTopicPicker({super.key, 
     required this.onSubjectSelected, 
     required this.onTopicSelected,
     this.initialSubject,
+    this.initialTopic,
   });
 
   @override
@@ -42,6 +44,16 @@ class _SubjectTopicPickerState extends State<SubjectTopicPicker> {
     ],
   };
 
+  @override 
+  void initState() {
+    super.initState();
+    // Initialize _selectedSubject and _selectedTopic based on initial values.
+    _selectedSubject = widget.initialSubject;
+    if (_selectedSubject != null && widget.initialTopic != null && _topics[_selectedSubject]!.contains(widget.initialTopic!)) {
+          _selectedTopic = widget.initialTopic;
+      }
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +62,7 @@ class _SubjectTopicPickerState extends State<SubjectTopicPicker> {
 
         DropdownButtonFormField<String>(
           decoration: const InputDecoration(labelText: 'Select Subject'),
-          value: widget.initialSubject ?? _selectedSubject,
+          value:  _selectedSubject,
           items: _topics.keys.map((subject) => DropdownMenuItem<String>(
                 value: subject,
                 child: Text(subject),

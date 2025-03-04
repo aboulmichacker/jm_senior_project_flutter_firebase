@@ -1,20 +1,16 @@
+import 'package:jm_senior/models/study_preferences_model.dart';
+
 class UserModel{
   final String id;
   final String username;
   final String email;
-  int studySessionDuration;
-  int breakDuration;
-  String studyStartTime;
-  String studyEndTime;
+  final StudyPreferences studyPreferences;
   
   UserModel({
     required this.id,
     required this.username,
     required this.email,
-    this.studySessionDuration = 45,
-    this.breakDuration = 15,
-    this.studyStartTime = '15:00',
-    this.studyEndTime = '23:00'
+    required this.studyPreferences
   });
 
    // Convert from Firestore document to User
@@ -23,10 +19,7 @@ class UserModel{
       id: id,
       username: data['username'] as String,
       email: data['email'] as String,
-      studySessionDuration: data['studySessionDuration'] ?? 45,
-      breakDuration: data['breakDuration'] ?? 15,
-      studyStartTime: data['studyStartTime'] ?? '15:00',
-      studyEndTime: data['studyEndTime'] ?? '23:00',
+      studyPreferences: StudyPreferences.fromFirestore(data['studyPreferences'] as Map<String,dynamic>)
     );
   }
 
@@ -35,10 +28,7 @@ class UserModel{
     return {
       'username': username,
       'email': email,
-      'studySessionDuration': studySessionDuration,
-      'breakDuration': breakDuration,
-      'studyStartTime': studyStartTime,
-      'studyEndTime': studyEndTime,
+      'studyPreferences': studyPreferences.toFirestore()
     };
   }
 

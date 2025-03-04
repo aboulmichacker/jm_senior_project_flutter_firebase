@@ -15,8 +15,10 @@ void main() async {
 
   if (kDebugMode) {
   try {
-    FirebaseFirestore.instance.useFirestoreEmulator('10.0.2.2', 8080);
-    await FirebaseAuth.instance.useAuthEmulator('10.0.2.2', 9099);
+    final String emulatorHost = '10.0.2.2';
+    // final String deviceHost = '192.168.1.106';
+    FirebaseFirestore.instance.useFirestoreEmulator(emulatorHost, 8080); 
+    await FirebaseAuth.instance.useAuthEmulator(emulatorHost, 9099);
   } catch (e) {
     // ignore: avoid_print
     print(e);
