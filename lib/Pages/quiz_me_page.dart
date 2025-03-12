@@ -153,74 +153,88 @@ class _QuizMePageState extends State<QuizMePage> {
       body: quiz != null ?
         QuizWidget(quiz: quiz!, onReset: _resetQuiz)
         :
-        Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 30),
-                child: SubjectTopicPicker(
-                  onSubjectSelected: (subject){
-                    setState(() { 
-                      _selectedSubject = subject;
-                    });
-                  },
-                  onTopicSelected: (topic){
-                    setState(() {
-                      _selectedTopic = topic;
-                    });
-                  } 
-                ),
-              ),
-              const SizedBox(height: 20),
-              _isLoading
-              ? const CircularProgressIndicator()
-              : Column(
-                children: [
-                  ElevatedButton.icon(
-                      onPressed: _isLoading ? null : (){
-                        try{
-                          _generateQuiz();
-                        }catch(e){
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(e.toString().replaceFirst('Exception: ', '')),
-                              backgroundColor: Colors.red,
-                            )
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        textStyle: const TextStyle(fontSize: 18, fontFamily: "Quicksand"),
+        Container(
+          height: MediaQuery.of(context).size.height,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('images/classroom_bg.jpeg'),
+              opacity: 0.2,
+              fit: BoxFit.cover
+            )
+          ),
+          child: Form(
+            key: _formKey,
+            child: Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 30),
+                      child: SubjectTopicPicker(
+                        onSubjectSelected: (subject){
+                          setState(() { 
+                            _selectedSubject = subject;
+                          });
+                        },
+                        onTopicSelected: (topic){
+                          setState(() {
+                            _selectedTopic = topic;
+                          });
+                        } 
                       ),
-                      icon: const Icon(Icons.auto_awesome, color: Colors.white,),
-                      label: const Text('Generate Quiz', style: TextStyle(color: Colors.white)),
                     ),
-                const SizedBox(height:20),
-                const Center(child: Text("OR")),
-                const SizedBox(height:20),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    if(_formKey.currentState!.validate()){
-                      _navigateToExistingQuizzes(context);
-                    }
-                  },
-                  icon: const Icon(Icons.list, color: Colors.white),
-                  label: const Text('Browse Existing Quizzes', style: TextStyle(color: Colors.white),),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    const SizedBox(height: 20),
+                    _isLoading
+                    ? const CircularProgressIndicator()
+                    : Column(
+                      children: [
+                        ElevatedButton.icon(
+                            onPressed: _isLoading ? null : (){
+                              try{
+                                _generateQuiz();
+                              }catch(e){
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(e.toString().replaceFirst('Exception: ', '')),
+                                    backgroundColor: Colors.red,
+                                  )
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              textStyle: const TextStyle(fontSize: 18, fontFamily: "Quicksand"),
+                            ),
+                            icon: const Icon(Icons.auto_awesome, color: Colors.white,),
+                            label: const Text('Generate Quiz', style: TextStyle(color: Colors.white)),
+                          ),
+                      const SizedBox(height:20),
+                      const Center(child: Text("OR")),
+                      const SizedBox(height:20),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          if(_formKey.currentState!.validate()){
+                            _navigateToExistingQuizzes(context);
+                          }
+                        },
+                        icon: const Icon(Icons.list, color: Colors.white),
+                        label: const Text('Browse Existing Quizzes', style: TextStyle(color: Colors.white),),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        ),
+                      ),
+                      ],
+                    ),
+                    ],
                   ),
-                ),
-                ],
               ),
-              ],
             ),
+          ),
         ),
     );
   }

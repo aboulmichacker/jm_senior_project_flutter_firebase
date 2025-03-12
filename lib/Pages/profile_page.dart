@@ -107,119 +107,129 @@ class _ProfilePageState extends State<ProfilePage> {
             appBar: AppBar(
               title: Text("${userData.username}'s preferences", style: const TextStyle(fontWeight: FontWeight.bold),),
             ),
-            body: SingleChildScrollView(
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 25, horizontal: 15),
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Text('Study Session Duration: $studySessionDuration minutes'),
-                  Slider(
-                    value: studySessionDuration.toDouble(),
-                    min: 10,
-                    max: 120,
-                    divisions: 22,
-                    onChanged: (value) {
-                      setState(() {
-                        studySessionDuration = value.toInt();
-                        studyPreferences.studySessionDuration = studySessionDuration;
-                      });
-                    },
-                  ),
-                  Text('Break Duration: $breakDuration minutes'),
-                  Slider(
-                    value: breakDuration.toDouble(),
-                    min: 1,
-                    max: 30,
-                    divisions: 29,
-                    onChanged: (value) {
-                      setState(() {
-                        breakDuration = value.toInt();
-                        studyPreferences.breakDuration = breakDuration;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  const Text('At what time do you start studying?'),
-                  TextField(
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Weekdays',
-                      suffixIcon: Icon(Icons.access_time),
-                    ),
-                    onTap: () => selectStudyStartTime(context),
-                    controller: TextEditingController(
-                      text: studyPreferences.studyStartTime,
-                    ),
-                  ),
-                     TextField(
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Weekends',
-                      suffixIcon: Icon(Icons.access_time),
-                    ),
-                    onTap: () => selectWeekendStartTime(context),
-                    controller: TextEditingController(
-                      text: studyPreferences.weekendStartTime,
-                    ),
-                  ),
-                  const SizedBox(height: 20,),
-                  const Text('At what time do you finish studying?'),
-                  TextField(
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Weekdays',
-                      suffixIcon: Icon(Icons.access_time),
-                    ),
-                    onTap: () => selectStudyEndTime(context),
-                    controller: TextEditingController(
-                      text: studyPreferences.studyEndTime,
-                    ),
-                  ),
-                  TextField(
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Weekends',
-                      suffixIcon: Icon(Icons.access_time),
-                    ),
-                    onTap: () => selectWeekendEndTime(context),
-                    controller: TextEditingController(
-                      text: studyPreferences.weekendEndTime,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () async{
-                        await FirestoreService().savePreferences(userData.id, studyPreferences);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                         const SnackBar(content: Text('Settings saved successfully!')),
-                        );
+            body: Container(
+              height: MediaQuery.of(context).size.height,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('images/classroom_bg.jpeg'),
+                  opacity: 0.2,
+                  fit: BoxFit.cover
+                )
+              ),
+              child: SingleChildScrollView(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 25, horizontal: 15),
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    Text('Study Session Duration: $studySessionDuration minutes'),
+                    Slider(
+                      value: studySessionDuration.toDouble(),
+                      min: 10,
+                      max: 120,
+                      divisions: 22,
+                      onChanged: (value) {
+                        setState(() {
+                          studySessionDuration = value.toInt();
+                          studyPreferences.studySessionDuration = studySessionDuration;
+                        });
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                      child: const Text('Save Study Preferences'),
                     ),
-                  ),
-                  const SizedBox(height: 20,),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await AuthService().signout();
+                    Text('Break Duration: $breakDuration minutes'),
+                    Slider(
+                      value: breakDuration.toDouble(),
+                      min: 1,
+                      max: 30,
+                      divisions: 29,
+                      onChanged: (value) {
+                        setState(() {
+                          breakDuration = value.toInt();
+                          studyPreferences.breakDuration = breakDuration;
+                        });
                       },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        textStyle: const TextStyle(fontSize: 18, fontFamily: "Quicksand"),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text('At what time do you start studying?'),
+                    TextField(
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Weekdays',
+                        suffixIcon: Icon(Icons.access_time),
                       ),
-                      child: const Text('Sign Out'),
+                      onTap: () => selectStudyStartTime(context),
+                      controller: TextEditingController(
+                        text: studyPreferences.studyStartTime,
+                      ),
                     ),
-                  ),
-                ],),
+                    TextField(
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Weekends',
+                        suffixIcon: Icon(Icons.access_time),
+                      ),
+                      onTap: () => selectWeekendStartTime(context),
+                      controller: TextEditingController(
+                        text: studyPreferences.weekendStartTime,
+                      ),
+                    ),
+                    const SizedBox(height: 20,),
+                    const Text('At what time do you finish studying?'),
+                    TextField(
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Weekdays',
+                        suffixIcon: Icon(Icons.access_time),
+                      ),
+                      onTap: () => selectStudyEndTime(context),
+                      controller: TextEditingController(
+                        text: studyPreferences.studyEndTime,
+                      ),
+                    ),
+                    TextField(
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Weekends',
+                        suffixIcon: Icon(Icons.access_time),
+                      ),
+                      onTap: () => selectWeekendEndTime(context),
+                      controller: TextEditingController(
+                        text: studyPreferences.weekendEndTime,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () async{
+                          await FirestoreService().savePreferences(userData.id, studyPreferences);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text('Settings saved successfully!')),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                        child: const Text('Save Study Preferences'),
+                      ),
+                    ),
+                    const SizedBox(height: 20,),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await AuthService().signout();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          textStyle: const TextStyle(fontSize: 18, fontFamily: "Quicksand"),
+                        ),
+                        child: const Text('Sign Out'),
+                      ),
+                    ),
+                  ],),
+                ),
               ),
             ),
           );

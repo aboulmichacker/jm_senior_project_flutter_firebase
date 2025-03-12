@@ -29,6 +29,19 @@ class _ExamsPageState extends State<ExamsPage> {
     );
   }
 
+  String _getBgImage(String subject){
+        switch (subject) {
+      case 'Math':
+        return 'Math_bg.jpeg';
+      case 'Physics':
+        return 'Physics_bg.jpeg';
+      case 'Chemistry':
+        return 'Chemistry_bg.jpeg';
+      default:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,62 +113,76 @@ class _ExamsPageState extends State<ExamsPage> {
                   onTap:(){
                     Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Schedule(exam: exam,)));
                   },
-                  child: Card(
+                  child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ListTile(
-                            title: Text(
-                              exam.subject,
-                              style: const TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.bold
-                              ),
-                            ),
-                            subtitle: Text(DateFormat('EEEE MMMM d \'at\' HH:mm').format(exam.date)),
-                          ),
-                          const SizedBox(height: 5,),
-                          Wrap(
-                            spacing: 5.0,
-                            children: exam.topics.map((topic) => Chip(label: Text(topic))).toList(),
-                          ),
-                          const SizedBox(height: 10),
-                          Center(
-                            child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  final quizResults = await FirestoreService().getQuizResultsData(exam.topics);
-                                  if(quizResults.isEmpty){
-                                    showDialog(
-                                      context: context, 
-                                      builder: (context) => MissingTopicsDialog(missingTopics: exam.topics)
-                                    );
-                                  }else if( quizResults.length < exam.topics.length){
-                                    // 1. Identify missing topics
-                                    List<String> foundTopics = quizResults.map((result) => result['topic'] as String).toList();
-                                    List<String> missingTopics = exam.topics.where((topic) => !foundTopics.contains(topic)).toList();
-                
-                                    // 2. Generate the schedule (with available data)
-                                    await GenerateSchedule().generateSchedule(exam, quizResults, context);
-                
-                                    // 3. Show dialog with missing topics
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => MissingTopicsDialog(missingTopics: missingTopics)
-                                    );
-                                  }
-                                  else{
-                                    GenerateSchedule().generateSchedule(exam, quizResults, context);
-                                  }
-                                },
-                                icon: const Icon(Icons.auto_awesome_rounded),
-                                label: exam.hasSchedule ? const Text("Update Schedule") :const Text("Generate Study Schedule"),
-                              ),
-                          ),
-                        ],
+                    padding: const EdgeInsets.all(10.0),
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.all(Radius.circular(15)),
+                      image: DecorationImage(
+                        image: AssetImage('images/${_getBgImage(exam.subject)}'),
+                        opacity: 0.30,
+                        fit: BoxFit.cover
                       ),
+                        boxShadow: [ 
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2), 
+                          spreadRadius: 2, 
+                          blurRadius: 5, 
+                          offset: const Offset(0, 3), 
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          title: Text(
+                            exam.subject,
+                            style: const TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold
+                            ),
+                          ),
+                          subtitle: Text(DateFormat('EEEE MMMM d \'at\' HH:mm').format(exam.date)),
+                        ),
+                        const SizedBox(height: 5,),
+                        Wrap(
+                          spacing: 5.0,
+                          children: exam.topics.map((topic) => Chip(label: Text(topic))).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        Center(
+                          child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final quizResults = await FirestoreService().getQuizResultsData(exam.topics);
+                                if(quizResults.isEmpty){
+                                  showDialog(
+                                    context: context, 
+                                    builder: (context) => MissingTopicsDialog(missingTopics: exam.topics)
+                                  );
+                                }else if( quizResults.length < exam.topics.length){
+                                  // 1. Identify missing topics
+                                  List<String> foundTopics = quizResults.map((result) => result['topic'] as String).toList();
+                                  List<String> missingTopics = exam.topics.where((topic) => !foundTopics.contains(topic)).toList();
+                                
+                                  // 2. Generate the schedule (with available data)
+                                  await GenerateSchedule().generateSchedule(exam, quizResults, context);
+                                
+                                  // 3. Show dialog with missing topics
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => MissingTopicsDialog(missingTopics: missingTopics)
+                                  );
+                                }
+                                else{
+                                  GenerateSchedule().generateSchedule(exam, quizResults, context);
+                                }
+                              },
+                              icon: const Icon(Icons.auto_awesome_rounded),
+                              label: exam.hasSchedule ? const Text("Update Schedule") :const Text("Generate Study Schedule"),
+                            ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

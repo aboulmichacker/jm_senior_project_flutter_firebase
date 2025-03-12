@@ -16,7 +16,7 @@ void main() async {
   if (kDebugMode) {
   try {
     final String emulatorHost = '10.0.2.2';
-    // final String deviceHost = '192.168.1.106';
+    // final String deviceHost = '192.168.1.107';
     FirebaseFirestore.instance.useFirestoreEmulator(emulatorHost, 8080); 
     await FirebaseAuth.instance.useAuthEmulator(emulatorHost, 9099);
   } catch (e) {

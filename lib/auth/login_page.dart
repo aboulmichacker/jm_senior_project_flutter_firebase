@@ -52,62 +52,87 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25),
-          child: Form(
-            key:_formKey,
-            child: Center(
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 20,),
-                      const Text('Login',
-                      style: TextStyle(
-                        fontSize: 30
-                      ),
+      body: Form(
+        key:_formKey,
+        child: SingleChildScrollView(
+          child: Container(         
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: const AssetImage('images/classroom_bg.jpeg'), 
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.green.withValues(alpha: 0.75), // Adjust opacity as needed
+                BlendMode.srcATop,  // Very good for tinting
+              ),
+            ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.4,
+                  child: const Center(
+                    child: Text(
+                    "First in Class",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 40,
+                      fontFamily: "Cabin Sketch",
+                      fontWeight: FontWeight.bold
                     ),
-                    const SizedBox(height: 20,),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.email),
-                        labelText: 'Email',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none,
+                  ),),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(20.0),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30)
+                    )
+                  ),
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.email),
+                          labelText: 'Email',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
-                      ),
-                      controller: _emailController,
-                      validator: (value){
-                        if(value == null || value.isEmpty){
-                          return 'Please enter an email.';
+                        controller: _emailController,
+                        validator: (value){
+                          if(value == null || value.isEmpty){
+                            return 'Please enter an email.';
+                          }
+                          return null;
                         }
-                        return null;
-                      }
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.lock),
-                        labelText: 'Password',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none,
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.lock),
+                          labelText: 'Password',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
-                      ),
-                      controller: _passwordController,
-                      validator: (value){
-                        if(value == null || value.isEmpty){
-                          return 'Please enter a password.';
+                        controller: _passwordController,
+                        validator: (value){
+                          if(value == null || value.isEmpty){
+                            return 'Please enter a password.';
+                          }
+                          return null;
                         }
-                        return null;
-                      }
-                    ),
+                      ),
                     const SizedBox(height: 30),
                     _isLoading 
                     ? 
@@ -138,12 +163,14 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                   
-                  ],
+                    const SizedBox(height: 20,)
+                    ],
                 ),
-              ),
+                ),
+              ],
             ),
-          )
+          ),
+        ),
       )
     );
   }

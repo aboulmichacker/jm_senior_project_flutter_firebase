@@ -67,9 +67,11 @@ class _SignupPageState extends State<SignupPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                     const SizedBox(height: 20,),
-                      const Text('Sign Up',
+                      const Text('First in Class',
                       style: TextStyle(
-                        fontSize: 30
+                        fontSize: 40,
+                        fontFamily: 'Cabin Sketch',
+                        fontWeight: FontWeight.bold
                       ),
                     ),
                     const SizedBox(height: 20,),
