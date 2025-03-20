@@ -58,7 +58,7 @@ class Quiz{
           .toList(),
       score: data["score"],
       timeTaken: data["timeTaken"],
-      timestamp: (data["timestamp"] as Timestamp).toDate()
+      timestamp: data['timestamp'] != null ? (data["timestamp"] as Timestamp).toDate() : DateTime.now()
     );
   }
   

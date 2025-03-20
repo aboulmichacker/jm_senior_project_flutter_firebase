@@ -12,21 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 class GenerateSchedule {
 
   Future<List<ApiPrediction>> _fetchPredictions(List<String> topics,List<Map<String,dynamic>> quizResultsData) async{
-    //DATA TO BE FETCHED FROM SOLVED QUIZZES
-    //FOR TESTING PURPOSES ONLY.
-
-
-
-    // List<Map<String, dynamic>> quizResultsData = topics.map((topic){
-    //     final quizTimeTaken = Random().nextInt(26) + 5; // Random quiz time taken between 5 and 30 minutes
-    //     final accuracy = (Random().nextDouble() * 0.8 + 0.2).toStringAsFixed(1); // Random accuracy between 0.2 and 1
-
-    //     return {
-    //       "topic": topic,
-    //       "quiz_time_taken": quizTimeTaken,
-    //       "accuracy": accuracy, // Convert back to double
-    //     };
-    // }).toList();
 
     
     try{

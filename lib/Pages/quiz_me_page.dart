@@ -8,7 +8,7 @@ import 'package:jm_senior/assets/schemas.dart';
 import 'package:jm_senior/components/quiz_widget.dart';
 import 'package:jm_senior/components/subject_topic_picker.dart';
 import 'package:jm_senior/models/quiz_model.dart';
-// import 'package:jm_senior/sample_data.dart';
+
 import 'package:jm_senior/services/firestore_service.dart';
 
 class QuizMePage extends StatefulWidget {
@@ -23,17 +23,8 @@ class _QuizMePageState extends State<QuizMePage> {
   String? _selectedSubject;
   String? _selectedTopic;
   bool _isLoading = false;
-  Quiz? quiz;// = SampleData().sampleQuiz; //FOR TESTING PURPOSES ONLY. TO BE REMOVED LATER.
-
-  // @override
-  // void initState(){
-  //   super.initState();
-  //   if(quiz != null){
-  //     quiz!.topic = "Algebra";
-  //   }
-  // }
-//FOR TESTING PURPOSES ONLY. TO BE REMOVED LATER.
-
+  Quiz? quiz;
+  
   Future<void> _generateQuiz() async {
     if(_formKey.currentState!.validate()){
       final apiKey = dotenv.env['GEMINI_API_KEY'];

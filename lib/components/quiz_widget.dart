@@ -140,10 +140,8 @@ class _QuizWidgetState extends State<QuizWidget> {
       if(response.text != null){
         Map<String,dynamic> jsonResponse = jsonDecode(response.text!);
         int apiScore = jsonResponse["quiz_score"] as int;
-         print(" API SCORE : $apiScore");
         setState(() {
           _quizScore = trueFalseMcqScore + apiScore;
-           print(" TOTAL SCORE : $trueFalseMcqScore + $apiScore = $_quizScore");
           // Process open-ended suggestions
           if (jsonResponse.containsKey('open_ended_suggestions') && 
           jsonResponse['open_ended_suggestions'] is List) {
